@@ -1,0 +1,6 @@
+a place for reuseable widget 
+ui/shared/
+├── buttons/
+├── inputs/
+├── dialogs/
+├── layout/

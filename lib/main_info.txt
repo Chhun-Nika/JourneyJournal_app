@@ -1,0 +1,8 @@
+main.dart → Entry point (bootstrapping)
+
+This is where the app starts running.
+
+Responsibilities:
+	•	Initialize Flutter bindings
+	•	Initialize services (SQLite, Auth, Notifications later)
+	•	Run the root widget
