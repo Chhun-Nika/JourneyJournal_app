@@ -1,25 +1,32 @@
 import 'package:uuid/uuid.dart';
 
 var uuid = Uuid();
+
 class Trip {
   final String tripId;
   final String userId;
-  final String name;
+  final String title;
   final String destination;
   final DateTime startDate;
   final DateTime endDate;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   Trip({
     String? tripId,
     required this.userId,
-    required this.name,
+    required this.title,
     required this.destination,
     required this.startDate,
     required this.endDate,
-  }) : tripId = tripId ?? uuid.v4();
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) : tripId = tripId ?? uuid.v4(),
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   Trip copyWith({
-    String? name,
+    String? title,
     String? destination,
     DateTime? startDate,
     DateTime? endDate,
@@ -27,10 +34,13 @@ class Trip {
     return Trip(
       tripId: tripId,
       userId: userId,
-      name: name ?? this.name,
+      title: title ?? this.title,
       destination: destination ?? this.destination,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
+      createdAt: createdAt,
+      updatedAt: DateTime.now()
     );
   }
+
 }

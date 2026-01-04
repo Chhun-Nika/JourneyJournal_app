@@ -10,6 +10,8 @@ class ChecklistItem {
   final bool completed;
   final bool reminderEnabled;
   final DateTime? reminderTime;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   ChecklistItem({
     String? checklistItemId,
@@ -19,7 +21,11 @@ class ChecklistItem {
     this.completed = false,
     this.reminderEnabled = false,
     this.reminderTime,
-  }) : checklistItemId = checklistItemId ?? uuid.v4();
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) : checklistItemId = checklistItemId ?? uuid.v4(),
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   ChecklistItem copyWith({
     String? name,
@@ -36,6 +42,8 @@ class ChecklistItem {
       completed: completed ?? this.completed,
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       reminderTime: reminderTime ?? this.reminderTime,
+      createdAt: createdAt,
+      updatedAt: DateTime.now()
     );
   }
 

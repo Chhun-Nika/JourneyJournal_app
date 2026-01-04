@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 var uuid = Uuid();
+
 class Expense {
   final String expenseId;
   final String categoryId;
@@ -9,6 +10,8 @@ class Expense {
   final double amount;
   final DateTime date;
   final String? note;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   Expense({
     String? expenseId,
@@ -18,7 +21,11 @@ class Expense {
     required this.amount,
     required this.date,
     this.note,
-  }) : expenseId = expenseId ?? uuid.v4();
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) : expenseId = expenseId ?? uuid.v4(),
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   Expense copyWith({
     String? title,
@@ -35,6 +42,8 @@ class Expense {
       amount: amount ?? this.amount,
       date: date ?? this.date,
       note: note ?? this.note,
+      createdAt: createdAt,
+      updatedAt: DateTime.now()
     );
   }
 }
