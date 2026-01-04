@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:journey_journal_app/data/repository/trip.repo.dart';
 import 'package:journey_journal_app/model/trip.dart';
-import 'package:journey_journal_app/ui/shared/app_button.dart';
-import 'package:journey_journal_app/ui/shared/app_date_field.dart';
-import 'package:journey_journal_app/ui/shared/app_text_field.dart';
+import 'package:journey_journal_app/ui/shared/widgets/app_date_field.dart';
 import 'package:journey_journal_app/ui/utils/validators.dart';
-import 'package:uuid/uuid.dart';
+import '../../data/preferences/user_preferences.dart';
+import '../shared/theme/app_theme.dart';
+import '../shared/widgets/app_button.dart';
+import '../shared/widgets/app_text_field.dart';
+import '../utils/date_validator.dart';
 
 class TripForm extends StatefulWidget {
   const TripForm({super.key});
@@ -19,122 +22,128 @@ class _TripFormState extends State<TripForm> {
   final _nameController = TextEditingController();
   final _desinationController = TextEditingController();
   final _noteController = TextEditingController();
+
   DateTime? startDate;
   DateTime? endDate;
+  String? currentUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final user = await UserPreference.getUser();
+    if (!mounted) return;
+    setState(() {
+      currentUserId = user?.userId;
+    });
+  }
 
   @override
   void dispose() {
-    super.dispose();
     _nameController.dispose();
-    _noteController.dispose();
     _desinationController.dispose();
-  }
-
-  Future<void> _pickStartDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: startDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-    );
-
-    if (date != null) {
-      setState(() {
-        startDate = date;
-        if (endDate != null && endDate!.isBefore(date)) {
-          endDate = date;
-        }
-      });
-    }
-  }
-
-  Future<void> _pickEndDate() async {
-    if (startDate == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Select start date first')));
-      return;
-    }
-    final date = await showDatePicker(
-      context: context,
-      initialDate: endDate ?? startDate,
-      firstDate: startDate!,
-      lastDate: DateTime(2100),
-    );
-    if (date != null) {
-      setState(() {
-        endDate = date;
-      });
-    }
+    _noteController.dispose();
+    super.dispose();
   }
 
   void onCreate() async {
     if (!_formkey.currentState!.validate()) return;
 
     final trip = Trip(
-      tripId: const Uuid().v4(),
-      userId: 'test_user_123', // replace it to current user 
+      userId: currentUserId!,
       title: _nameController.text.trim(),
       destination: _desinationController.text.trim(),
       startDate: startDate!,
       endDate: endDate!,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
     );
 
     try {
       await TripRepository().addTrip(trip);
-      Navigator.pop(context, true);
+
+      if (!mounted) return;
+      context.pop(trip); // return newly created trip
     } catch (e) {
-      debugPrint('Failed to create trip: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to create trip')));
     }
-}
-
-
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Create New Trip"),
-        backgroundColor: Colors.white,
+        title: Text(
+          "Create New Trip",
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        // backgroundColor: Colors.white,
+        // foregroundColor: Colors.white,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.backgroundColor,
       body: Padding(
-        padding: EdgeInsetsGeometry.all(12),
+        padding: const EdgeInsets.only(top: 40, left: 18, right: 18),
         child: Form(
           key: _formkey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Trip Name
               AppTextField(
-                hint: "Trip Name",
+                label: "Trip Name",
                 controller: _nameController,
                 validator: (v) => Validators.required(v, 'Name'),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
+
+              // Destination
               AppTextField(
-                hint: "Desination",
+                label: "Destination",
                 controller: _desinationController,
-                validator: (v) => Validators.required(v, 'Desination'),
+                validator: (v) => Validators.required(v, 'Destination'),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
+
+              // Start Date
               AppDateField(
-                hint: "Start Date",
+                hint: "Select start date",
                 value: startDate,
-                onTap: _pickStartDate,
+                allowPastDates: true, // cannot pick past date
+                onChanged: (date) {
+                  setState(() {
+                    startDate = date;
+                    if (endDate != null && endDate!.isBefore(date)) {
+                      endDate = date; // adjust end date
+                    }
+                  });
+                },
                 validator: (_) =>
-                    startDate == null ? 'Please select start date' : null,
+                    AppDateValidator.validateRequired(startDate, 'start date'),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
+
+              // End Date
               AppDateField(
-                hint: "End Date",
+                hint: "Select end date",
                 value: endDate,
-                onTap: _pickEndDate,
-                validator: (_) =>
-                    endDate == null ? 'Please select end date' : null,
+                allowPastDates: true,
+                onChanged: (date) => setState(() => endDate = date),
+                validator: (_) => AppDateValidator.validateEndDate(
+                  start: startDate,
+                  end: endDate,
+                  startFieldName: 'start date',
+                  endFieldName: 'end date',
+                ),
               ),
               const SizedBox(height: 30),
+
+              // Create Button
               AppButton(text: "Create Trip", onPressed: onCreate),
             ],
           ),
