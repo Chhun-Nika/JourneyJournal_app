@@ -32,4 +32,18 @@ class Validators {
     }
     return null;
   }
+
+  static String? price(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Price is required';
+    }
+
+    final parsed = double.tryParse(value.trim().replaceAll(',', ''));
+
+    if (parsed == null || parsed <= 0) {
+      return 'Enter a valid price';
+    }
+
+    return null;
+  }
 }

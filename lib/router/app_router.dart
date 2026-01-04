@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journey_journal_app/data/repository/expense_repo.dart';
+import 'package:journey_journal_app/model/category.dart';
+import 'package:journey_journal_app/ui/expense/add_expense_screen.dart';
+import 'package:journey_journal_app/ui/expense/expense_list_screen.dart';
 import 'package:journey_journal_app/ui/trip/trip_page.dart';
 
 import '../ui/auth/login_screen.dart';
 import '../ui/auth/register_screen.dart';
 import '../ui/welcome/welcome_screen.dart';
+import '../data/seed/default_category.dart';
+
+final ExpenseRepository expenseRepository = ExpenseRepository();
 
 
 final GoRouter appRouter = GoRouter(
@@ -36,6 +43,37 @@ final GoRouter appRouter = GoRouter(
       path: '/trips',
       name: 'trips',
       builder: (context, state) => const TripPage(),
+    ),
+
+    // Expense List Screen with tripId param in path
+    GoRoute(
+      path: '/expenses',
+      name: 'expense_list',
+      builder: (context, state) {
+        final tripId = state.extra as String? ?? '';
+        return ExpenseListScreen(
+          tripId: tripId,
+          expenseRepository: expenseRepository,
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/expenses/add',
+      name: 'add_expense',
+      builder: (context, state) {
+        final tripId = state.extra as String? ?? '';
+
+        final expenseCategories = defaultCategories
+            .where((c) => c.categoryType == CategoryType.expense)
+            .toList();
+
+        return AddExpenseScreen(
+          tripId: tripId,
+          expenseRepository: expenseRepository,
+          categories: expenseCategories,
+        );
+      },
     ),
   ],
 
