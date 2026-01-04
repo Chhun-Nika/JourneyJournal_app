@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:journey_journal_app/data/database/database_helper.dart';
 import 'package:journey_journal_app/ui/shared/theme/app_theme.dart';
-import 'router/app_router.dart' ; // <-- your separate GoRouter file
+import 'router/app_router.dart' ; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       title: 'Journey Journal',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      routerConfig: appRouter, // <-- use your separate router
+      routerConfig: appRouter, 
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journey_journal_app/data/preferences/user_preferences.dart';
 import 'package:journey_journal_app/ui/shared/theme/app_theme.dart';
 import 'package:journey_journal_app/ui/shared/widgets/app_button.dart';
 import 'package:journey_journal_app/ui/shared/widgets/app_text_field.dart';
@@ -29,29 +30,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // void login
   void onLogin() async {
-    if (_formKey.currentState!.validate()) {
-      final email = _emailController.text;
-      final password = _passwordController.text;
+  if (_formKey.currentState!.validate()) {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
 
-      // bug
-      debugPrint('Login with $email / $password');
-        // Attempt login via repository
-        final isLogin = await _userRepository.login(email, password);
-        if (!mounted) return; // safety check in async functions
-        if (isLogin) {
-          // Navigate to trips/home page on success
-          context.go('/trips');
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Login successful')));
-        } else {
-          // Invalid email/password
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Invalid email or password')),
-          );
-        }
+    final user = await _userRepository.login(email, password);
+
+    if (!mounted) return;
+
+    if (user != null) {
+      // Save the logged-in user
+      UserPreference.saveUser(user);
+      context.go('/trips');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login successful')),
+      );
+    } else {
+      // Invalid email/password
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid email or password')),
+      );
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

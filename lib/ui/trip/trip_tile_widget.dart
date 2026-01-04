@@ -1,51 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../shared/theme/app_theme.dart';
 
 class TripTileWidget extends StatelessWidget {
   final String tripName;
   final DateTime startDate;
   final DateTime endDate;
+  final VoidCallback? onTap;
 
   const TripTileWidget({
     super.key,
     required this.tripName,
     required this.startDate,
     required this.endDate,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('d MMM');
     final formattedDate =
-        '${dateFormat.format(startDate)} - '
-        '${dateFormat.format(endDate)} ${endDate.year}';
+        '${dateFormat.format(startDate)} - ${dateFormat.format(endDate)} ${endDate.year}';
 
-    return Padding(
-      padding: const EdgeInsets.all(8),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Material(
-        color: const Color(0xFFF7F7F7),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.transparent, // make Material transparent to show Container color
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: () {},
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap ?? () {}, // pass the callback
           child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 22, vertical: 3),
             title: Text(
               tripName,
-              style: const TextStyle(
-                color: Color(0xff000000),
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textColor,
+                  ),
             ),
             subtitle: Text(
               formattedDate,
-              style: const TextStyle(
-                color: Color(0xff7f7f7f),
-                fontSize: 12,
-                fontWeight: FontWeight.w500 
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
             ),
-            trailing: const Icon(Icons.chevron_right,),
+            trailing: Icon(
+              Icons.chevron_right,
+              size: 28,
+              color: AppTheme.primaryColor,
+            ),
           ),
         ),
       ),
