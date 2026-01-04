@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 var uuid = Uuid();
+
 class ItineraryActivity {
   final String activityId;
   final String tripId;
@@ -11,6 +12,8 @@ class ItineraryActivity {
   final TimeOfDay time;
   final bool reminderEnabled;
   final int reminderMinutesBefore;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   ItineraryActivity({
     String? activityId,
@@ -21,7 +24,11 @@ class ItineraryActivity {
     required this.time,
     this.reminderEnabled = false,
     this.reminderMinutesBefore = 15,
-  }) : activityId = activityId ?? uuid.v4();
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) : activityId = activityId ?? uuid.v4(),
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   // copyWith is used to create a new instance with updated fields
   ItineraryActivity copyWith({
@@ -33,15 +40,16 @@ class ItineraryActivity {
     int? reminderMinutesBefore,
   }) {
     return ItineraryActivity(
-      activityId: activityId, 
+      activityId: activityId,
       tripId: tripId,
       name: name ?? this.name,
       description: description ?? this.description,
       date: date ?? this.date,
       time: time ?? this.time,
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
-      reminderMinutesBefore:
-          reminderMinutesBefore ?? this.reminderMinutesBefore,
+      reminderMinutesBefore: reminderMinutesBefore ?? this.reminderMinutesBefore,
+      createdAt: createdAt,
+      updatedAt: updatedAt
     );
   }
 }
