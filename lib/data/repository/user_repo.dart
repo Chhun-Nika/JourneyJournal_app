@@ -81,12 +81,30 @@ class UserRepository {
     await _userDao.delete(userId);
   }
 
-  Future<bool> login(String email, String password) async {
-    // Find the user by email
+  // Future<bool> login(String email, String password) async {
+  //   // Find the user by email
+  //   final userMap = await _userDao.getByEmail(email);
+  //   if (userMap == null) return false;
+  //   final userId = userMap['userId'] as String;
+  //   return await verifyPassword(userId, password);
+  // }
+
+  Future<User?> login(String email, String password) async {
     final userMap = await _userDao.getByEmail(email);
-    if (userMap == null) return false;
+    if (userMap == null) return null;
+
     final userId = userMap['userId'] as String;
-    return await verifyPassword(userId, password);
+    final isValid = await verifyPassword(userId, password);
+    if (!isValid) return null;
+
+    return User(
+      userId: userId,
+      name: userMap['name'] as String,
+      email: userMap['email'] as String,
+      password: '', 
+      createdAt: DateTime.parse(userMap['createdAt'] as String),
+      updatedAt: DateTime.parse(userMap['updatedAt'] as String),
+    );
   }
 
   Future<bool> changePassword(

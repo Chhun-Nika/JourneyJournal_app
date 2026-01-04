@@ -6,8 +6,11 @@ import 'package:journey_journal_app/ui/expense/add_expense_screen.dart';
 import 'package:journey_journal_app/ui/expense/expense_list_screen.dart';
 import 'package:journey_journal_app/ui/trip/trip_page.dart';
 
+import 'package:journey_journal_app/ui/home/home_screen.dart';
+import 'package:journey_journal_app/ui/trip/trip_screen.dart';
 import '../ui/auth/login_screen.dart';
 import '../ui/auth/register_screen.dart';
+import '../ui/trip/trip_form.dart';
 import '../ui/welcome/welcome_screen.dart';
 import '../data/seed/default_category.dart';
 
@@ -38,11 +41,21 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
 
-    // Home Screen (after login/register)
+    // Home Screen 
+    // GoRoute(
+    //   path: '/trips',
+    //   name: 'trips',
+    //   builder: (context, state) => const TripListScreen(),
+    // ),
     GoRoute(
       path: '/trips',
-      name: 'trips',
-      builder: (context, state) => const TripPage(),
+      builder: (context, state) => const HomeScreen(),
+      routes: [
+        GoRoute(
+          path: 'create', // full path: /trips/create
+          builder: (context, state) => const TripForm(),
+        ),
+      ],
     ),
 
     // Expense List Screen with tripId param in path

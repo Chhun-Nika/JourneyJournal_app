@@ -76,7 +76,7 @@ class AppTheme {
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
-        elevation: 1, // lighter shadow (default is usually 4)
+        elevation: 0, // lighter shadow (default is usually 4)
       // optional: softer colored shadow
       ),
     ),
