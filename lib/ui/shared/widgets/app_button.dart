@@ -4,6 +4,8 @@ class AppButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
 
+
+
   const AppButton({
     super.key,
     required this.text,
@@ -17,15 +19,7 @@ class AppButton extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xff89A4F1),
-                elevation: 4,
-                shadowColor: Colors.black,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
+        style: Theme.of(context).elevatedButtonTheme.style,
         child: Text(
           text,
           style: const TextStyle(

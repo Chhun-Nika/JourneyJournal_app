@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:intl/message_format.dart';
 
 import '../dao/user_dao.dart';
 import '../../model/user.dart';
@@ -8,8 +9,18 @@ import '../../model/user.dart';
 class UserRepository {
   final _userDao = UserDao();
 
-  Future<void> createUser(User user) async {
-    final hashedPassword = sha256.convert(utf8.encode(user.password)).toString();
+  Future<bool> createUser(User user) async {
+    // Check if email already exists
+    final existingUser = await _userDao.getByEmail(user.email);
+    if (existingUser != null) {
+      return false;
+    }
+    // Hash the password
+    final hashedPassword = sha256
+        .convert(utf8.encode(user.password))
+        .toString();
+
+    // Insert the new user
     await _userDao.insert({
       'userId': user.userId,
       'name': user.name,
@@ -18,6 +29,7 @@ class UserRepository {
       'createdAt': user.createdAt.toIso8601String(),
       'updatedAt': user.updatedAt.toIso8601String(),
     });
+    return true;
   }
 
   Future<User?> getUserByEmail(String email) async {
