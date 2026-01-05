@@ -1,91 +1,152 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:journey_journal_app/data/repository/expense_repo.dart';
-import 'package:journey_journal_app/model/expense.dart';
-import 'package:journey_journal_app/ui/expense/expense_tile.dart';
-import 'package:journey_journal_app/ui/expense/total_expense_card.dart';
-import 'package:journey_journal_app/ui/shared/create_button.dart';
-import '../../data/seed/default_category.dart';
+import 'package:intl/intl.dart';
 
+import '../../data/repository/category_repo.dart';
+import '../../data/repository/expense_repo.dart';
+import '../../model/category.dart';
+import '../../model/expense.dart';
+import '../../model/trip.dart';
+import '../shared/theme/app_theme.dart';
+import '../shared/widgets/create_button.dart';
+import 'expense_tile.dart';
+import 'total_expense_card.dart';
 
 class ExpenseListScreen extends StatefulWidget {
-  final String tripId;
-  final ExpenseRepository expenseRepository;
+  final Trip trip;
 
-  const ExpenseListScreen({
-    super.key,
-    required this.tripId,
-    required this.expenseRepository,
-  });
+  const ExpenseListScreen({super.key, required this.trip});
 
   @override
   State<ExpenseListScreen> createState() => _ExpenseListScreenState();
 }
 
 class _ExpenseListScreenState extends State<ExpenseListScreen> {
-  late Future<List<Expense>> _expensesFuture;
+  bool isLoading = true;
+
+  final ExpenseRepository expenseRepository = ExpenseRepository();
+  final CategoryRepository categoryRepository = CategoryRepository();
+
+  List<Category> expenseCategories = []; // store fetched categories
+  Map<DateTime, List<Expense>> groupedExpenses = {};
 
   @override
   void initState() {
     super.initState();
-    _loadExpenses();
+    _loadData();
   }
 
-  void _loadExpenses() {
-    _expensesFuture = widget.expenseRepository.getTripExpenses(widget.tripId);
+  /// Load both expenses and categories
+  Future<void> _loadData() async {
+    try {
+      // 1. Load categories of type expense
+      expenseCategories = await categoryRepository.getCategoriesByType(CategoryType.expense);
+
+      // 2. Load grouped expenses
+      final grouped = await expenseRepository.getGroupedExpenses(widget.trip.tripId);
+
+      if (!mounted) return;
+
+      setState(() {
+        groupedExpenses = grouped;
+        widget.trip.expenses.clear();
+        grouped.forEach((_, list) => widget.trip.expenses.addAll(list));
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading expenses or categories: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
-  void _onCreatePressed() {
-    // Navigate using GoRouter (adjust route as per your setup)
-    context.push('/expenses/add', extra: {
-      'tripId': 'some-valid-trip-id',
-      'categories': defaultCategories,
-    });
+  void _onCreatePressed() async {
+    final newExpense = await context.push<Expense>(
+      '/expenses/add',
+      extra: {
+        'tripId': widget.trip.tripId,
+        'categories': expenseCategories, // pass categories to AddExpenseScreen
+      },
+    );
+
+    if (newExpense != null) {
+      final date = DateTime(newExpense.date.year, newExpense.date.month, newExpense.date.day);
+      setState(() {
+        groupedExpenses.putIfAbsent(date, () => []).add(newExpense);
+        widget.trip.expenses.add(newExpense);
+      });
+    }
+  }
+
+  /// Helper to get category name from ID
+  String getCategoryName(String categoryId) {
+    final cat = expenseCategories.firstWhere(
+      (c) => c.categoryId == categoryId,
+      orElse: () => Category(
+        categoryId: 'unknown',
+        categoryType: CategoryType.expense,
+        name: 'Unknown',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+    return cat.name;
   }
 
   @override
   Widget build(BuildContext context) {
+    final totalExpense = widget.trip.totalExpense;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Expenses'),
-      ),
+      appBar: AppBar(title: const Text('Expenses')),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: FutureBuilder<List<Expense>>(
-          future: _expensesFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : widget.trip.expenses.isEmpty
+                ? const Center(child: Text('No expenses yet'))
+                : Column(
+                    children: [
+                      TotalExpenseCard(totalAmount: totalExpense),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView(
+                          children: groupedExpenses.entries.map((entry) {
+                            final date = entry.key;
+                            final expenses = entry.value;
 
-            final expenses = snapshot.data ?? [];
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Date header
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Text(
+                                    DateFormat('d MMM y').format(date),
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                          color: AppTheme.primaryColor,
+                                        ),
+                                  ),
+                                ),
 
-            if (expenses.isEmpty) {
-              return const Center(child: Text('No expenses yet'));
-            }
-
-            final totalExpense = expenses.fold<double>(0, (sum, e) => sum + e.amount);
-
-            return Column(
-              children: [
-                TotalExpenseCard(totalAmount: totalExpense),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: expenses.length,
-                    itemBuilder: (context, index) {
-                      final expense = expenses[index];
-                      return ExpenseTile(expense: expense);
-                    },
+                                // List of expenses for that date
+                                ...expenses.map(
+                                  (expense) => ExpenseTile(
+                                    expense: expense,
+                                    categoryName: getCategoryName(expense.categoryId),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            );
-          },
-        ),
       ),
       floatingActionButton: CreateButton(
         tooltip: 'Add New Expense',

@@ -1,8 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class WelcomeScreen extends StatelessWidget {
+import '../../data/preferences/user_preferences.dart';
+
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeApp();
+    });
+  }
+
+  Future<void> _initializeApp() async {
+    // Optional: reset DB for testing
+    // await DatabaseHelper.reset();
+    // Check if user is logged in
+    final user = await UserPreference.getUser();
+
+    if (user != null) {
+      context.go('/trips'); // Go directly to trips home
+    } 
+    // else stay on welcome screen so user can login or register
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,21 +38,16 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background color or image
           Container(
             width: size.width,
             height: size.height,
             color: Colors.white,
           ),
-
-          // Centered Logo
           Align(
             alignment: Alignment.center,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Replace with your app logo
-             
                 const SizedBox(height: 20),
                 const Text(
                   'Journey Journal',
@@ -38,8 +60,6 @@ class WelcomeScreen extends StatelessWidget {
               ],
             ),
           ),
-
-          // Bottom container with rounded top corners
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -57,10 +77,7 @@ class WelcomeScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Navigate to login screen via GoRouter
-                        context.push('/login');
-                      },
+                      onPressed: () => context.push('/login'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.blue,
@@ -79,10 +96,7 @@ class WelcomeScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () {
-                        // Navigate to sign up screen via GoRouter
-                        context.push('/register');
-                      },
+                      onPressed: () => context.push('/register'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(color: Colors.white),

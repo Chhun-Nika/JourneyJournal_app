@@ -24,7 +24,7 @@ class AppDrawer extends StatelessWidget {
         ),
         onTap: () {
           Navigator.pop(context); // Close drawer
-          context.go(route); // Navigate to route
+          context.push(route); // Navigate to route
         },
       );
     }
@@ -47,25 +47,11 @@ class AppDrawer extends StatelessWidget {
                 ),
               ),
             ),
+            const Divider(), // optional visual separation
             buildDrawerItem(
-              title: 'Trips',
-              icon: Icons.list_alt,
-              route: '/trips',
-            ),
-            buildDrawerItem(
-              title: 'Profile',
-              icon: Icons.person,
-              route: '/profile',
-            ),
-            buildDrawerItem(
-              title: 'Settings',
-              icon: Icons.settings,
-              route: '/settings',
-            ),
-            buildDrawerItem(
-              title: 'About',
-              icon: Icons.info_outline,
-              route: '/about',
+              title: 'DB Inspector',
+              icon: Icons.storage,
+              route: '/db-inspector', // this will link to your inspector screen
             ),
           ],
         ),

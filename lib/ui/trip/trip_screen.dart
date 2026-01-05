@@ -4,8 +4,6 @@ import 'package:journey_journal_app/model/trip.dart';
 import 'package:journey_journal_app/model/user.dart';
 import 'package:journey_journal_app/data/repository/trip.repo.dart';
 import 'package:journey_journal_app/data/preferences/user_preferences.dart';
-import 'package:journey_journal_app/ui/profile/profile.dart';
-import 'package:journey_journal_app/ui/shared/widgets/app_bottom_bar.dart';
 import 'package:journey_journal_app/ui/shared/widgets/create_button.dart';
 import '../shared/widgets/home_app_drawer.dart';
 import 'trip_tile_widget.dart';
@@ -171,7 +169,7 @@ class _TripListScreenState extends State<TripListScreen> {
                           startDate: trip.startDate,
                           endDate: trip.endDate,
                           onTap: () {
-                            // You can add navigation to trip details here
+                            context.push('/trips/details', extra: trip);
                           },
                         );
                       },

@@ -1,7 +1,8 @@
-
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:path_provider/path_provider.dart';
+
+import '../seed/default_category.dart';
 
 const String _createUserTable = '''
 CREATE TABLE users (
@@ -46,11 +47,10 @@ CREATE TABLE itinerary_activities (
 );
 ''';
 
-// when the category is deleted, the categoryId in expense table will be null instead of throwing errors
 const String _createExpenseTable = '''
 CREATE TABLE expenses (
   expenseId TEXT PRIMARY KEY,
-  categoryId TEXT NOT NULL,
+  categoryId TEXT,
   tripId TEXT NOT NULL,
   title TEXT NOT NULL,
   amount REAL NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE expenses (
 const String _createCheckListItemTable = '''
 CREATE TABLE checklist_items (
   checklistItemId TEXT PRIMARY KEY,
-  categoryId TEXT NOT NULL,
+  categoryId TEXT,
   tripId TEXT NOT NULL,
   name TEXT NOT NULL,
   completed INTEGER NOT NULL DEFAULT 0,
@@ -86,19 +86,14 @@ CREATE TABLE checklist_items (
 const String _createCategoriesTable = '''
 CREATE TABLE categories (
   categoryId TEXT PRIMARY KEY,
-  categoryType TEXT NOT NULL,
+  categoryType INTEGER NOT NULL,
   name TEXT NOT NULL,
-  isDefault INTEGER NOT NULL DEFAULT 1,
-  userId TEXT,
   createdAt TEXT NOT NULL,
-  updatedAt TEXT NOT NULL,
-  FOREIGN KEY (userId) REFERENCES users(userId)
-    ON DELETE CASCADE
+  updatedAt TEXT NOT NULL
 );
 ''';
 
 class DatabaseHelper {
-  // private constructor, make sure that it can only be used within this class / file
   DatabaseHelper._();
   static final DatabaseHelper instance = DatabaseHelper._();
   static Database? _database;
@@ -107,39 +102,51 @@ class DatabaseHelper {
   static const String _dbName = "JourneyJournal.db";
 
   Future<Database> get database async {
-    if (_database != null) {
-      return _database!;
-    }
+    if (_database != null) return _database!;
     _database = await _openDatabase();
     return _database!;
   }
 
   Future<Database> _openDatabase() async {
-    final directory = await getApplicationSupportDirectory();
-    print(directory);
-    return openDatabase(join(await getDatabasesPath(), _dbName),
+    return openDatabase(
+      join(await getDatabasesPath(), _dbName),
       version: _version,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
-      // onUpgrade: _onUpgrade,
     );
   }
 
-  // enable relationship inside database
   Future<void> _onConfigure(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON');
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    // Create all tables
     await db.execute(_createUserTable);
     await db.execute(_createTripTable);
     await db.execute(_createItineraryActivityTable);
     await db.execute(_createExpenseTable);
     await db.execute(_createCheckListItemTable);
     await db.execute(_createCategoriesTable);
-  }
 
-  
+    // Seed default categories
+    final now = DateTime.now();
+    for (final cat in defaultCategories) {
+      await db.insert(
+        'categories',
+        {
+        'categoryId': cat.categoryId,
+        'categoryType': cat.categoryType.index,
+        'name': cat.name,
+        'createdAt': now.toIso8601String(),
+        'updatedAt': now.toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
+
+    print('Database created and default categories seeded.');
+  }
 
   Future<void> close() async {
     if (_database != null) {
@@ -148,33 +155,11 @@ class DatabaseHelper {
     }
   }
 
-  static Future<void> _onUpgrade(
-  Database db,
-  int oldVersion,
-  int newVersion,
-) async {
-  if (oldVersion < 2) {
-    await db.execute('''
-      ALTER TABLE trips ADD COLUMN destination TEXT NOT NULL DEFAULT ''
-    ''');
-  }
-}
-/// Delete the existing database entirely
+  /// Delete the existing database entirely
   static Future<void> reset() async {
-    // Close the current database
     await instance.close();
-
-    // Get app directory
-    final directory = await getApplicationSupportDirectory();
-
-    // Database path
-    final dbPath = join(directory.path, _dbName);
-
-    // Delete the database file
+    final dbPath = join(await getDatabasesPath(), _dbName);
     await deleteDatabase(dbPath);
-
     print('Database reset: $dbPath deleted');
   }
-
-
 }

@@ -22,17 +22,18 @@ class ExpenseDao {
     return null;
   }
 
-  // Get all expenses for a given trip
+  // Get all expenses for a trip
   Future<List<Map<String, Object?>>> getByTripId(String tripId) async {
     final db = await _dbHelper.database;
     return await db.query(
       tableName,
       where: 'tripId = ?',
       whereArgs: [tripId],
+      orderBy: 'date ASC',
     );
   }
 
-  // Update an expense by its ID
+  // Update an expense
   Future<int> update(String expenseId, Map<String, Object?> row) async {
     final db = await _dbHelper.database;
     return await db.update(
@@ -43,7 +44,7 @@ class ExpenseDao {
     );
   }
 
-  // Delete an expense by its ID
+  // Delete an expense
   Future<int> delete(String expenseId) async {
     final db = await _dbHelper.database;
     return await db.delete(
