@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:journey_journal_app/data/database/database_helper.dart';
+import 'package:journey_journal_app/data/preferences/user_preferences.dart';
 import 'package:journey_journal_app/ui/shared/theme/app_theme.dart';
 import 'router/app_router.dart' ; 
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await DatabaseHelper.instance.database;
   } catch (e) {
     debugPrint('Failed to initialize database: $e');
   }
+  // await DatabaseHelper.reset();
+  // await UserPreference.clearUser();
   runApp(const MyApp());
 }
 

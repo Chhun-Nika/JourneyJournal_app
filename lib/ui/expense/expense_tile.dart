@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:journey_journal_app/model/expense.dart';
+import '../shared/theme/app_theme.dart';
 
 class ExpenseTile extends StatelessWidget {
   final Expense expense;
+  final String categoryName; // Added
   final VoidCallback? onTap;
 
   const ExpenseTile({
     super.key,
     required this.expense,
+    required this.categoryName,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Card(
-      elevation: 1,
+      color: Colors.grey[100], // subtle gray background instead of shadow
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -26,13 +28,11 @@ class ExpenseTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: 12,
-            horizontal: 16,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Title and amount
               Row(
                 children: [
                   Expanded(
@@ -53,6 +53,18 @@ class ExpenseTile extends StatelessWidget {
                 ],
               ),
 
+              // Category name under the title
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  categoryName,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppTheme.hintColor,
+                  ),
+                ),
+              ),
+
+              // Optional note
               if (expense.note != null && expense.note!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),

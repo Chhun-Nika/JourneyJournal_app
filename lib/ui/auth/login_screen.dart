@@ -40,7 +40,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (user != null) {
       // Save the logged-in user
-      UserPreference.saveUser(user);
+      await UserPreference.saveUser(user);
+      if (!mounted) return;
       context.go('/trips');
 
       ScaffoldMessenger.of(context).showSnackBar(

@@ -5,6 +5,7 @@ class CategoryDao {
   static const tableName = "categories";
   final _dbHelper = DatabaseHelper.instance;
 
+  // insert category use for seeding only
   Future<void> insert(Map<String, Object?> values) async {
     final db = await _dbHelper.database;
     await db.insert(
@@ -13,44 +14,16 @@ class CategoryDao {
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
   }
-
-  Future<List<Map<String, Object?>>> getByUserAndType(
-    String userId,
-    int categoryType,
+  // Get categories by type
+  Future<List<Map<String, Object?>>> getByType(
+    String categoryType,
   ) async {
     final db = await _dbHelper.database;
-    return await db.rawQuery(
-      '''
-      SELECT *
-      FROM $tableName
-      WHERE categoryType = ?
-        AND (userId = ? OR userId IS NULL)
-      ORDER BY isDefault DESC, name ASC
-      ''',
-      [categoryType, userId],
-    );
-  }
-
-  Future<void> update(
-    String categoryId,
-    Map<String, Object?> values,
-  ) async {
-    final db = await _dbHelper.database;
-    await db.update(
+    return await db.query(
       tableName,
-      values,
-      where: 'categoryId = ? AND isDefault = 0',
-      whereArgs: [categoryId],
+      where: 'categoryType = ?',
+      whereArgs: [categoryType],
+      orderBy: 'name ASC',
     );
   }
-
-  Future<void> delete(String categoryId) async {
-    final db = await _dbHelper.database;
-    await db.delete(
-      tableName,
-      where: 'categoryId = ? AND isDefault = 0',
-      whereArgs: [categoryId],
-    );
-  }
-
 }

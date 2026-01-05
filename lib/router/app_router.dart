@@ -4,18 +4,18 @@ import 'package:journey_journal_app/data/repository/expense_repo.dart';
 import 'package:journey_journal_app/model/category.dart';
 import 'package:journey_journal_app/ui/expense/add_expense_screen.dart';
 import 'package:journey_journal_app/ui/expense/expense_list_screen.dart';
-import 'package:journey_journal_app/ui/trip/trip_page.dart';
-
-import 'package:journey_journal_app/ui/home/home_screen.dart';
-import 'package:journey_journal_app/ui/trip/trip_screen.dart';
+import 'package:journey_journal_app/ui/trip/trip_tab_screen.dart';
+import '../model/trip.dart';
 import '../ui/auth/login_screen.dart';
 import '../ui/auth/register_screen.dart';
+import '../ui/dbInspector/db_inspector.dart';
+import '../ui/home_screen.dart';
+import '../ui/trip/itinerary_activity_screen.dart';
 import '../ui/trip/trip_form.dart';
 import '../ui/welcome/welcome_screen.dart';
 import '../data/seed/default_category.dart';
 
 final ExpenseRepository expenseRepository = ExpenseRepository();
-
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/welcome',
@@ -41,7 +41,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
 
-    // Home Screen 
+    // Home Screen
     // GoRoute(
     //   path: '/trips',
     //   name: 'trips',
@@ -57,17 +57,33 @@ final GoRouter appRouter = GoRouter(
         ),
       ],
     ),
+    GoRoute(
+      path: '/trips/details',
+      builder: (context, state) {
+        final Trip trip = state.extra as Trip; // get the trip from extra
+        return TripTabsScreen(trip: trip);
+      },
+    ),
+    GoRoute(
+      path: '/trips/:tripId/agenda',
+      builder: (context, state) {
+        final trip = (state.extra as Map)['trip'] as Trip;
+        final dayIndex = (state.extra as Map)['dayIndex'] as int;
+        final dayDate = (state.extra as Map)['dayDate'] as DateTime;
+
+        return AgendaScreen(trip: trip, dayIndex: dayIndex, dayDate: dayDate);
+      },
+    ),
 
     // Expense List Screen with tripId param in path
     GoRoute(
       path: '/expenses',
       name: 'expense_list',
       builder: (context, state) {
-        final tripId = state.extra as String? ?? '';
-        return ExpenseListScreen(
-          tripId: tripId,
-          expenseRepository: expenseRepository,
-        );
+        // Expecting the full Trip object as extra
+        final trip = state.extra as Trip;
+
+        return ExpenseListScreen(trip: trip);
       },
     ),
 
@@ -75,25 +91,24 @@ final GoRouter appRouter = GoRouter(
       path: '/expenses/add',
       name: 'add_expense',
       builder: (context, state) {
-        final tripId = state.extra as String? ?? '';
+        // Expecting state.extra to be a Map<String, dynamic>
+        final extra = state.extra as Map<String, dynamic>?;
 
-        final expenseCategories = defaultCategories
-            .where((c) => c.categoryType == CategoryType.expense)
-            .toList();
+        final tripId = extra?['tripId'] as String? ?? '';
+        final categories = extra?['categories'] as List<Category>? ?? [];
 
-        return AddExpenseScreen(
-          tripId: tripId,
-          expenseRepository: expenseRepository,
-          categories: expenseCategories,
-        );
+        return AddExpenseScreen(tripId: tripId, categories: categories);
       },
+    ),
+
+    GoRoute(
+      path: '/db-inspector',
+      builder: (context, state) => const DbInspectorScreen(),
     ),
   ],
 
   /// Error page
   errorBuilder: (context, state) => Scaffold(
-    body: Center(
-      child: Text('Page not found: ${state.uri.toString()}'),
-    ),
+    body: Center(child: Text('Page not found: ${state.uri.toString()}')),
   ),
 );
