@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -80,6 +82,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
 
   List<ItineraryActivity> agendas = [];
   bool _loading = true;
+  Timer? _nextRefreshTimer;
 
   @override
   void initState() {
@@ -102,10 +105,12 @@ class _AgendaScreenState extends State<AgendaScreen> {
       (a, b) => a.combineDateTime.compareTo(b.combineDateTime),
     );
 
+    if (!mounted) return;
     setState(() {
       agendas = filtered;
       _loading = false;
     });
+    _scheduleNextRefresh();
   }
 
   Future<void> _toggleCompleted(
@@ -117,6 +122,49 @@ class _AgendaScreenState extends State<AgendaScreen> {
 
     await _repository.updateActivity(updated);
     await _loadAgendas();
+  }
+
+  void _scheduleNextRefresh() {
+    _nextRefreshTimer?.cancel();
+
+    final now = DateTime.now();
+    DateTime? nextUpdate;
+
+    for (final activity in agendas) {
+      final eventTime = activity.combineDateTime;
+      if (eventTime.isAfter(now)) {
+        nextUpdate = _earliest(nextUpdate, eventTime);
+      }
+
+      if (activity.reminderEnabled) {
+        final reminderTime = activity.reminderNotificationDateTime;
+        if (reminderTime.isAfter(now)) {
+          nextUpdate = _earliest(nextUpdate, reminderTime);
+        }
+      }
+    }
+
+    if (nextUpdate == null) return;
+
+    final delay = nextUpdate.difference(now);
+    _nextRefreshTimer = Timer(delay, () {
+      if (!mounted) return;
+      setState(() {});
+      _scheduleNextRefresh();
+    });
+  }
+
+  DateTime _earliest(DateTime? current, DateTime candidate) {
+    if (current == null || candidate.isBefore(current)) {
+      return candidate;
+    }
+    return current;
+  }
+
+  @override
+  void dispose() {
+    _nextRefreshTimer?.cancel();
+    super.dispose();
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journey_journal_app/data/repository/itinerary_activity_repo.dart';
+import 'package:journey_journal_app/data/service/notification_service.dart';
 import '../../model/itinerary_activity.dart';
 import '../../model/trip.dart';
 import '../shared/theme/app_theme.dart';
@@ -64,6 +65,9 @@ class _AddItineraryActivityScreenState
     // context.pop(activity);
     try {
       await _itineraryRepo.addActivity(activity);
+      await NotificationService.instance.scheduleItineraryNotifications(
+        activity,
+      );
       if (!mounted) return;
       context.pop(activity); // Return the new expense to the list screen
     } catch (e) {
