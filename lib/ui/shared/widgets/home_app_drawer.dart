@@ -36,7 +36,7 @@ class AppDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: AppTheme.primaryColor),
+              decoration: BoxDecoration(color: AppTheme.primaryColor, ),
               child: Center(
                 child: Text(
                   'Journey Journal',
@@ -47,7 +47,7 @@ class AppDrawer extends StatelessWidget {
                 ),
               ),
             ),
-            const Divider(), // optional visual separation
+
             buildDrawerItem(
               title: 'DB Inspector',
               icon: Icons.storage,

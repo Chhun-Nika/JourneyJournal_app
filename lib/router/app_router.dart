@@ -10,7 +10,8 @@ import '../ui/auth/login_screen.dart';
 import '../ui/auth/register_screen.dart';
 import '../ui/dbInspector/db_inspector.dart';
 import '../ui/home_screen.dart';
-import '../ui/trip/itinerary_activity_screen.dart';
+import '../ui/itinerary/add_itinerary.dart';
+import '../ui/itinerary/itinerary_activity_screen.dart';
 import '../ui/trip/trip_form.dart';
 import '../ui/welcome/welcome_screen.dart';
 import '../data/seed/default_category.dart';
@@ -67,11 +68,33 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/trips/:tripId/agenda',
       builder: (context, state) {
-        final trip = (state.extra as Map)['trip'] as Trip;
-        final dayIndex = (state.extra as Map)['dayIndex'] as int;
-        final dayDate = (state.extra as Map)['dayDate'] as DateTime;
+        final extra = state.extra;
+        if (extra is Map &&
+            extra['trip'] is Trip &&
+            extra['dayIndex'] is int &&
+            extra['dayDate'] is DateTime) {
+          return AgendaScreen(
+            trip: extra['trip'] as Trip,
+            dayIndex: extra['dayIndex'] as int,
+            dayDate: extra['dayDate'] as DateTime,
+          );
+        }
 
-        return AgendaScreen(trip: trip, dayIndex: dayIndex, dayDate: dayDate);
+        final tripId = state.pathParameters['tripId'];
+        final dateParam = state.uri.queryParameters['date'];
+        final parsedDate =
+            dateParam != null ? DateTime.tryParse(dateParam) : null;
+
+        if (tripId != null && parsedDate != null) {
+          return AgendaRouteLoader(
+            tripId: tripId,
+            dayDate: parsedDate,
+          );
+        }
+
+        return const Scaffold(
+          body: Center(child: Text('Invalid itinerary link')),
+        );
       },
     ),
 
@@ -98,6 +121,18 @@ final GoRouter appRouter = GoRouter(
         final categories = extra?['categories'] as List<Category>? ?? [];
 
         return AddExpenseScreen(tripId: tripId, categories: categories);
+      },
+    ),
+
+    GoRoute(
+      path: '/itinerary/add',
+      name: 'add_itinerary',
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+        return AddItineraryActivityScreen(
+          trip: data['trip'],
+          dayDate: data['date'],
+        );
       },
     ),
 

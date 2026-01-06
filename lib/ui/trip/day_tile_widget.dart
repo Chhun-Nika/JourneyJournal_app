@@ -19,8 +19,8 @@ class DayTileWidget extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final formattedDate = DateFormat('d MMMM yyyy').format(dayDate);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 6),
       child: Material(
         color: Colors.grey[100], // light background
         borderRadius: BorderRadius.circular(10),

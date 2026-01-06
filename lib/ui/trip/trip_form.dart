@@ -114,7 +114,7 @@ class _TripFormState extends State<TripForm> {
               AppDateField(
                 hint: "Select start date",
                 value: startDate,
-                allowPastDates: true, // cannot pick past date
+                allowPastDates: false, // cannot pick past date
                 onChanged: (date) {
                   setState(() {
                     startDate = date;
@@ -132,7 +132,7 @@ class _TripFormState extends State<TripForm> {
               AppDateField(
                 hint: "Select end date",
                 value: endDate,
-                allowPastDates: true,
+                allowPastDates: false,
                 onChanged: (date) => setState(() => endDate = date),
                 validator: (_) => AppDateValidator.validateEndDate(
                   start: startDate,
