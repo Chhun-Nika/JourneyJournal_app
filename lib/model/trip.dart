@@ -1,3 +1,4 @@
+import 'package:journey_journal_app/model/checklist_item.dart';
 import 'package:uuid/uuid.dart';
 
 import 'expense.dart';
@@ -14,6 +15,8 @@ class Trip {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<Expense> expenses;
+  final List<ChecklistItem> checklistItems;
+  
 
   Trip({
     String? tripId,
@@ -25,10 +28,12 @@ class Trip {
     DateTime? createdAt,
     DateTime? updatedAt,
     List<Expense>? expenses,
+    List<ChecklistItem>? checklistItems,
   }) : tripId = tripId ?? uuid.v4(),
        createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now(),
-       expenses = expenses ?? [];
+       expenses = expenses ?? [],
+       checklistItems = checklistItems ?? [];
 
   Trip copyWith({
     String? title,
@@ -45,9 +50,18 @@ class Trip {
       endDate: endDate ?? this.endDate,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
+      expenses: expenses,
+      checklistItems: checklistItems,
+
     );
   }
 
   int get totalDays => endDate.difference(startDate).inDays + 1;
   double get totalExpense => expenses.fold(0.0, (sum, e) => sum + e.amount);
+
+  int get completedChecklistCount =>
+      checklistItems.where((i) => i.completed).length;
+
+  int get totalChecklistCount => checklistItems.length;
+
 }

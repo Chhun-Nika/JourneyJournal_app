@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:journey_journal_app/ui/checklist/checklist_screen.dart';
 import 'package:journey_journal_app/ui/trip/trip_details_screen.dart';
 import '../../model/trip.dart';
 import '../expense/expense_list_screen.dart';
@@ -21,7 +22,7 @@ class _TripTabsScreenState extends State<TripTabsScreen> {
     final screens = [
       TripDetailsScreen(trip: widget.trip), // previously the TripDetailsScreen body
       ExpenseListScreen(trip: widget.trip,),
-      // ChecklistScreen(trip: widget.trip.id),
+      ChecklistListScreen(trip: widget.trip)
     ];
 
     return Scaffold(
