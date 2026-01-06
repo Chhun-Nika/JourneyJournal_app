@@ -84,14 +84,12 @@ final GoRouter appRouter = GoRouter(
 
         final tripId = state.pathParameters['tripId'];
         final dateParam = state.uri.queryParameters['date'];
-        final parsedDate =
-            dateParam != null ? DateTime.tryParse(dateParam) : null;
+        final parsedDate = dateParam != null
+            ? DateTime.tryParse(dateParam)
+            : null;
 
         if (tripId != null && parsedDate != null) {
-          return AgendaRouteLoader(
-            tripId: tripId,
-            dayDate: parsedDate,
-          );
+          return AgendaRouteLoader(tripId: tripId, dayDate: parsedDate);
         }
 
         return const Scaffold(
@@ -134,6 +132,11 @@ final GoRouter appRouter = GoRouter(
         return AddItineraryActivityScreen(
           trip: data['trip'],
           dayDate: data['date'],
+        );
+      },
+    ),
+
+    GoRoute(
       path: '/checklist',
       name: 'checklist_list',
       builder: (context, state) {
@@ -175,8 +178,6 @@ final GoRouter appRouter = GoRouter(
       path: '/db-inspector',
       builder: (context, state) => const DbInspectorScreen(),
     ),
-
-    
   ],
 
   /// Error page
