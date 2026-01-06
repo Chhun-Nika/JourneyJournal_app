@@ -40,10 +40,14 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   Future<void> _loadData() async {
     try {
       // 1. Load categories of type expense
-      expenseCategories = await categoryRepository.getCategoriesByType(CategoryType.expense);
+      expenseCategories = await categoryRepository.getCategoriesByType(
+        CategoryType.expense,
+      );
 
       // 2. Load grouped expenses
-      final grouped = await expenseRepository.getGroupedExpenses(widget.trip.tripId);
+      final grouped = await expenseRepository.getGroupedExpenses(
+        widget.trip.tripId,
+      );
 
       if (!mounted) return;
 
@@ -73,7 +77,11 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     );
 
     if (newExpense != null) {
-      final date = DateTime(newExpense.date.year, newExpense.date.month, newExpense.date.day);
+      final date = DateTime(
+        newExpense.date.year,
+        newExpense.date.month,
+        newExpense.date.day,
+      );
       setState(() {
         groupedExpenses.putIfAbsent(date, () => []).add(newExpense);
         widget.trip.expenses.add(newExpense);
@@ -107,46 +115,49 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : widget.trip.expenses.isEmpty
-                ? const Center(child: Text('No expenses yet'))
-                : Column(
-                    children: [
-                      TotalExpenseCard(totalAmount: totalExpense),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: ListView(
-                          children: groupedExpenses.entries.map((entry) {
-                            final date = entry.key;
-                            final expenses = entry.value;
+            ? const Center(child: Text('No expenses yet'))
+            : Column(
+                children: [
+                  TotalExpenseCard(totalAmount: totalExpense),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView(
+                      children: groupedExpenses.entries.map((entry) {
+                        final date = entry.key;
+                        final expenses = entry.value;
 
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Date header
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: Text(
-                                    DateFormat('d MMM y').format(date),
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          color: AppTheme.primaryColor,
-                                        ),
-                                  ),
-                                ),
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Date header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8.0,
+                              ),
+                              child: Text(
+                                DateFormat('d MMM y').format(date),
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(color: AppTheme.primaryColor),
+                              ),
+                            ),
 
-                                // List of expenses for that date
-                                ...expenses.map(
-                                  (expense) => ExpenseTile(
-                                    expense: expense,
-                                    categoryName: getCategoryName(expense.categoryId),
-                                  ),
+                            // List of expenses for that date
+                            ...expenses.map(
+                              (expense) => ExpenseTile(
+                                expense: expense,
+                                categoryName: getCategoryName(
+                                  expense.categoryId,
                                 ),
-                                const SizedBox(height: 20),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        );
+                      }).toList(),
+                    ),
                   ),
+                ],
+              ),
       ),
       floatingActionButton: CreateButton(
         tooltip: 'Add New Expense',

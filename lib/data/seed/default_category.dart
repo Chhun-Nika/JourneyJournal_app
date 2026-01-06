@@ -62,33 +62,4 @@ final defaultCategories = <Category>[
     name: 'other',
   ),
 
-  // Itinerary Activity
-  Category(
-    categoryType: CategoryType.itineraryActivity,
-    name: 'Sightseeing',
-  ),
-  Category(
-    categoryType: CategoryType.itineraryActivity,
-    name: 'Food',
-  ),
-  Category(
-    categoryType: CategoryType.itineraryActivity,
-    name: 'Shopping',
-  ),
-  Category(
-    categoryType: CategoryType.itineraryActivity,
-    name: 'Transport',
-  ),
-  Category(
-    categoryType: CategoryType.itineraryActivity,
-    name: 'Relaxation',
-  ),
-  Category(
-    categoryType: CategoryType.itineraryActivity,
-    name: 'Adventure',
-  ),
-   Category(
-    categoryType: CategoryType.itineraryActivity,
-    name: 'other',
-  ),
 ];

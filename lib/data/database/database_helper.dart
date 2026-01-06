@@ -35,9 +35,11 @@ CREATE TABLE itinerary_activities (
   activityId TEXT PRIMARY KEY,
   tripId TEXT NOT NULL,
   name TEXT NOT NULL,
+  location TEXT,
   description TEXT,
   date TEXT NOT NULL,
   time TEXT NOT NULL,
+  isCompleted INTEGER NOT NULL DEFAULT 0,
   reminderEnabled INTEGER NOT NULL DEFAULT 0,
   reminderMinutesBefore INTEGER NOT NULL DEFAULT 0,
   createdAt TEXT NOT NULL,
@@ -130,20 +132,20 @@ class DatabaseHelper {
     await db.execute(_createCategoriesTable);
 
     // Seed default categories
-    final now = DateTime.now();
-    for (final cat in defaultCategories) {
-      await db.insert(
-        'categories',
-        {
-        'categoryId': cat.categoryId,
-        'categoryType': cat.categoryType.index,
-        'name': cat.name,
-        'createdAt': now.toIso8601String(),
-        'updatedAt': now.toIso8601String(),
-        },
-        conflictAlgorithm: ConflictAlgorithm.ignore,
-      );
-    }
+    // final now = DateTime.now();
+    // for (final cat in defaultCategories) {
+    //   await db.insert(
+    //     'categories',
+    //     {
+    //     'categoryId': cat.categoryId,
+    //     'categoryType': cat.categoryType.index,
+    //     'name': cat.name,
+    //     'createdAt': now.toIso8601String(),
+    //     'updatedAt': now.toIso8601String(),
+    //     },
+    //     conflictAlgorithm: ConflictAlgorithm.ignore,
+    //   );
+    // }
 
     print('Database created and default categories seeded.');
   }

@@ -5,7 +5,7 @@ class ItineraryActivityDao {
   static const tableName = "itinerary_activities";
   final _dbHelper = DatabaseHelper.instance;
 
-  Future<void> insert(Map<String, Object> activityMap) async {
+  Future<void> insert(Map<String, Object?> activityMap) async {
     final db = await _dbHelper.database;
     await db.insert(
       tableName,
@@ -35,7 +35,7 @@ class ItineraryActivityDao {
     );
   }
 
-  Future<void> update(Map<String, Object> activityMap, String activityId) async {
+  Future<void> update(Map<String, Object?> activityMap, String activityId) async {
     final db = await _dbHelper.database;
     await db.update(
       tableName,

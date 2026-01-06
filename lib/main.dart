@@ -4,7 +4,7 @@ import 'package:journey_journal_app/data/preferences/user_preferences.dart';
 import 'package:journey_journal_app/ui/shared/theme/app_theme.dart';
 import 'router/app_router.dart' ; 
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await DatabaseHelper.instance.database;
