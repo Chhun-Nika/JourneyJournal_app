@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journey_journal_app/data/repository/expense_repo.dart';
 import 'package:journey_journal_app/model/category.dart';
+import 'package:journey_journal_app/model/checklist_item.dart';
+import 'package:journey_journal_app/ui/checklist/add_checklist.dart';
+import 'package:journey_journal_app/ui/checklist/checklist_screen.dart';
 import 'package:journey_journal_app/ui/expense/add_expense_screen.dart';
 import 'package:journey_journal_app/ui/expense/expense_list_screen.dart';
 import 'package:journey_journal_app/ui/trip/trip_tab_screen.dart';
@@ -14,7 +17,6 @@ import '../ui/itinerary/add_itinerary.dart';
 import '../ui/itinerary/itinerary_activity_screen.dart';
 import '../ui/trip/trip_form.dart';
 import '../ui/welcome/welcome_screen.dart';
-import '../data/seed/default_category.dart';
 
 final ExpenseRepository expenseRepository = ExpenseRepository();
 
@@ -132,6 +134,39 @@ final GoRouter appRouter = GoRouter(
         return AddItineraryActivityScreen(
           trip: data['trip'],
           dayDate: data['date'],
+      path: '/checklist',
+      name: 'checklist_list',
+      builder: (context, state) {
+        // Expecting full Trip object as extra
+        final trip = state.extra as Trip;
+        return ChecklistListScreen(trip: trip);
+      },
+    ),
+
+    GoRoute(
+      path: '/checklist/add',
+      name: 'add_checklist_item',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+
+        final tripId = extra?['tripId'] as String? ?? '';
+        final categories = extra?['categories'] as List<Category>? ?? [];
+
+        return AddChecklistItemScreen(tripId: tripId, categories: categories);
+      },
+    ),
+
+    GoRoute(
+      path: '/checklist/edit',
+      builder: (context, state) {
+        final extra = state.extra as Map;
+        final tripId = extra['tripId'] as String;
+        final categories = extra['categories'] as List<Category>;
+        final existingItem = extra['existingItem'] as ChecklistItem;
+        return AddChecklistItemScreen(
+          tripId: tripId,
+          categories: categories,
+          existingItem: existingItem,
         );
       },
     ),
@@ -140,6 +175,8 @@ final GoRouter appRouter = GoRouter(
       path: '/db-inspector',
       builder: (context, state) => const DbInspectorScreen(),
     ),
+
+    
   ],
 
   /// Error page
