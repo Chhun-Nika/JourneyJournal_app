@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: GestureDetector(
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
           child: Form(
             key: _formKey,
             child: Column(

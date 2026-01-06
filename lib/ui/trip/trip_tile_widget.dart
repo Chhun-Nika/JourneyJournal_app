@@ -23,37 +23,59 @@ class TripTileWidget extends StatelessWidget {
         '${dateFormat.format(startDate)} - ${dateFormat.format(endDate)} ${endDate.year}';
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: const EdgeInsets.symmetric(
+        vertical: AppTheme.tileVerticalMargin,
+      ),
+      height: AppTheme.tileHeight,
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.tileBorderRadius),
       ),
       child: Material(
         color: Colors.transparent, // make Material transparent to show Container color
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.tileBorderRadius),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppTheme.tileBorderRadius),
           onTap: onTap ?? () {}, // pass the callback
-          child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 22, vertical: 3),
-            title: Text(
-              tripName,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textColor,
-                  ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.tileHorizontalPadding,
             ),
-            subtitle: Text(
-              formattedDate,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tripName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textColor,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        formattedDate,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                      ),
+                    ],
                   ),
-            ),
-            trailing: Icon(
-              Icons.chevron_right,
-              size: 28,
-              color: AppTheme.primaryColor,
+                ),
+                const SizedBox(width: 12),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 28,
+                  color: AppTheme.primaryColor,
+                ),
+              ],
             ),
           ),
         ),

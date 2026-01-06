@@ -10,7 +10,7 @@ import '../../model/trip.dart';
 import '../shared/theme/app_theme.dart';
 import '../shared/widgets/create_button.dart';
 import 'expense_tile.dart';
-import 'total_expense_card.dart';
+import 'expense_breakdown_card.dart';
 
 class ExpenseListScreen extends StatefulWidget {
   final Trip trip;
@@ -89,6 +89,73 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     }
   }
 
+  Future<bool> _confirmDeleteExpense(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Delete expense?'),
+            content: const Text('This will remove the expense permanently.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _deleteExpense(Expense expense) async {
+    final dateKey = DateTime(
+      expense.date.year,
+      expense.date.month,
+      expense.date.day,
+    );
+    final dateList = groupedExpenses[dateKey];
+    if (dateList == null) return;
+
+    final dateIndex =
+        dateList.indexWhere((item) => item.expenseId == expense.expenseId);
+    final tripIndex = widget.trip.expenses.indexWhere(
+      (item) => item.expenseId == expense.expenseId,
+    );
+    if (dateIndex == -1 || tripIndex == -1) return;
+
+    setState(() {
+      dateList.removeAt(dateIndex);
+      if (dateList.isEmpty) {
+        groupedExpenses.remove(dateKey);
+      }
+      widget.trip.expenses.removeAt(tripIndex);
+    });
+
+    try {
+      await expenseRepository.deleteExpense(expense.expenseId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Expense deleted')));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        groupedExpenses.putIfAbsent(dateKey, () => []);
+        groupedExpenses[dateKey]!.insert(dateIndex, expense);
+        widget.trip.expenses.insert(tripIndex, expense);
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to delete expense')));
+    }
+  }
+
   /// Helper to get category name from ID
   String getCategoryName(String categoryId) {
     final cat = expenseCategories.firstWhere(
@@ -106,8 +173,6 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final totalExpense = widget.trip.totalExpense;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Expenses')),
       body: Padding(
@@ -118,7 +183,10 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             ? const Center(child: Text('No expenses yet'))
             : Column(
                 children: [
-                  TotalExpenseCard(totalAmount: totalExpense),
+                  ExpenseBreakdownCard(
+                    trip: widget.trip,
+                    categories: expenseCategories,
+                  ),
                   const SizedBox(height: 12),
                   Expanded(
                     child: ListView(
@@ -143,10 +211,35 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
                             // List of expenses for that date
                             ...expenses.map(
-                              (expense) => ExpenseTile(
-                                expense: expense,
-                                categoryName: getCategoryName(
-                                  expense.categoryId,
+                              (expense) => Dismissible(
+                                key: ValueKey(
+                                  '${expense.expenseId}_${expense.createdAt}',
+                                ),
+                                direction: DismissDirection.endToStart,
+                                confirmDismiss: (_) =>
+                                    _confirmDeleteExpense(context),
+                                onDismissed: (_) => _deleteExpense(expense),
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppTheme.tileHorizontalPadding,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.tileBorderRadius,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                child: ExpenseTile(
+                                  expense: expense,
+                                  categoryName: getCategoryName(
+                                    expense.categoryId,
+                                  ),
                                 ),
                               ),
                             ),

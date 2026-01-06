@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../model/checklist_item.dart';
 import '../../model/itinerary_activity.dart';
 import '../../router/app_router.dart';
 
@@ -18,6 +19,10 @@ class NotificationService {
   static const String _channelName = 'Itinerary reminders';
   static const String _channelDescription =
       'Notifications for itinerary activities';
+  static const String _checklistChannelId = 'checklist_notifications';
+  static const String _checklistChannelName = 'Checklist reminders';
+  static const String _checklistChannelDescription =
+      'Notifications for checklist items';
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -51,6 +56,13 @@ class NotificationService {
         importance: Importance.high,
       );
       await androidPlugin.createNotificationChannel(channel);
+      const checklistChannel = AndroidNotificationChannel(
+        _checklistChannelId,
+        _checklistChannelName,
+        description: _checklistChannelDescription,
+        importance: Importance.high,
+      );
+      await androidPlugin.createNotificationChannel(checklistChannel);
     }
 
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
@@ -108,6 +120,14 @@ class NotificationService {
     }
   }
 
+  Future<void> cancelItineraryNotifications(ItineraryActivity activity) async {
+    if (!Platform.isAndroid) return;
+    await initialize();
+
+    await _plugin.cancel(_activityNotificationId(activity.activityId));
+    await _plugin.cancel(_reminderNotificationId(activity.activityId));
+  }
+
   void _onNotificationResponse(NotificationResponse response) {
     _openRouteFromPayload(response.payload);
   }
@@ -134,6 +154,47 @@ class NotificationService {
       priority: Priority.high,
     );
     return const NotificationDetails(android: androidDetails);
+  }
+
+  NotificationDetails _checklistNotificationDetails() {
+    const androidDetails = AndroidNotificationDetails(
+      _checklistChannelId,
+      _checklistChannelName,
+      channelDescription: _checklistChannelDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    return const NotificationDetails(android: androidDetails);
+  }
+
+  Future<void> scheduleChecklistNotification(ChecklistItem item) async {
+    if (!Platform.isAndroid) return;
+    await initialize();
+
+    if (!item.reminderEnabled || item.reminderTime == null) return;
+
+    final permissionGranted = await _ensureNotificationPermission();
+    if (!permissionGranted) return;
+
+    final scheduleMode = await _resolveAndroidScheduleMode();
+    final now = DateTime.now();
+    final reminderTime = item.reminderTime!;
+    if (!reminderTime.isAfter(now)) return;
+
+    await _plugin.zonedSchedule(
+      _checklistNotificationId(item.checklistItemId),
+      'Checklist reminder',
+      item.name,
+      _toUtcTzDateTime(reminderTime),
+      _checklistNotificationDetails(),
+      androidScheduleMode: scheduleMode,
+    );
+  }
+
+  Future<void> cancelChecklistNotification(ChecklistItem item) async {
+    if (!Platform.isAndroid) return;
+    await initialize();
+    await _plugin.cancel(_checklistNotificationId(item.checklistItemId));
   }
 
   String _buildActivityBody(ItineraryActivity activity) {
@@ -224,5 +285,9 @@ class NotificationService {
         normalized.length >= 8 ? normalized.substring(0, 8) : normalized;
     final parsed = int.tryParse(hex, radix: 16) ?? 0;
     return parsed & 0x3fffffff;
+  }
+
+  int _checklistNotificationId(String checklistItemId) {
+    return _notificationBaseId(checklistItemId) + 0x40000000;
   }
 }

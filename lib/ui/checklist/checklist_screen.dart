@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journey_journal_app/data/repository/checklist_item_repo.dart';
+import 'package:journey_journal_app/data/service/notification_service.dart';
 
 import '../../data/repository/category_repo.dart';
 import '../../model/category.dart';
 import '../../model/checklist_item.dart';
 import '../../model/trip.dart';
+import '../shared/theme/app_theme.dart';
 import '../shared/widgets/create_button.dart';
 import 'checklist_item_tile.dart';
 
@@ -25,6 +29,7 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
   final CategoryRepository categoryRepository = CategoryRepository();
 
   List<Category> checklistCategories = [];
+  Timer? _nextRefreshTimer;
 
   // Keep track of last cleared completed items for undo
   List<ChecklistItem> _lastClearedCompleted = [];
@@ -54,10 +59,38 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
           ..addAll(items);
         isLoading = false;
       });
+      _scheduleNextRefresh();
     } catch (e) {
       debugPrint('Error loading checklist: $e');
       if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  void _scheduleNextRefresh() {
+    _nextRefreshTimer?.cancel();
+
+    final now = DateTime.now();
+    DateTime? nextUpdate;
+
+    for (final item in widget.trip.checklistItems) {
+      if (item.completed) continue;
+      if (!item.reminderEnabled || item.reminderTime == null) continue;
+      final reminderTime = item.reminderTime!;
+      if (reminderTime.isAfter(now)) {
+        if (nextUpdate == null || reminderTime.isBefore(nextUpdate)) {
+          nextUpdate = reminderTime;
+        }
+      }
+    }
+
+    if (nextUpdate == null) return;
+
+    final delay = nextUpdate.difference(now);
+    _nextRefreshTimer = Timer(delay, () {
+      if (!mounted) return;
+      setState(() {});
+      _scheduleNextRefresh();
+    });
   }
 
   void _onCreatePressed() async {
@@ -70,6 +103,7 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
       setState(() {
         widget.trip.checklistItems.add(newItem);
       });
+      _scheduleNextRefresh();
     }
   }
 
@@ -90,6 +124,7 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
         );
         if (index != -1) widget.trip.checklistItems[index] = updatedItem;
       });
+      _scheduleNextRefresh();
     }
   }
 
@@ -127,6 +162,7 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
       );
       if (index != -1) widget.trip.checklistItems[index] = updated;
     });
+    _scheduleNextRefresh();
   }
 
   void _clearCompleted() async {
@@ -139,12 +175,14 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
     _lastClearedCompleted = completedItems;
 
     for (var item in completedItems) {
+      await NotificationService.instance.cancelChecklistNotification(item);
       await checklistRepository.deleteChecklistItem(item.checklistItemId);
     }
 
     setState(() {
       widget.trip.checklistItems.removeWhere((item) => item.completed);
     });
+    _scheduleNextRefresh();
 
     // Show Snackbar with Undo
     ScaffoldMessenger.of(context).showSnackBar(
@@ -159,12 +197,14 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
   void _undoClearCompleted() async {
     for (var item in _lastClearedCompleted) {
       await checklistRepository.addChecklistItem(item);
+      await NotificationService.instance.scheduleChecklistNotification(item);
     }
 
     setState(() {
       widget.trip.checklistItems.addAll(_lastClearedCompleted);
       _lastClearedCompleted = [];
     });
+    _scheduleNextRefresh();
   }
 
   void _deleteItem(ChecklistItem item) async {
@@ -172,10 +212,12 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
     _lastDeletedItem = item;
 
     await checklistRepository.deleteChecklistItem(item.checklistItemId);
+    await NotificationService.instance.cancelChecklistNotification(item);
 
     setState(() {
       widget.trip.checklistItems.remove(item);
     });
+    _scheduleNextRefresh();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -189,13 +231,22 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
     if (_lastDeletedItem == null) return;
 
     await checklistRepository.addChecklistItem(_lastDeletedItem!);
+    await NotificationService.instance
+        .scheduleChecklistNotification(_lastDeletedItem!);
 
     setState(() {
       widget.trip.checklistItems.insert(_lastDeletedIndex!, _lastDeletedItem!);
     });
+    _scheduleNextRefresh();
 
     _lastDeletedItem = null;
     _lastDeletedIndex = null;
+  }
+
+  @override
+  void dispose() {
+    _nextRefreshTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -272,10 +323,14 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
                       onDismissed: (_) => _deleteItem(item),
                       background: Container(
                         alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.tileHorizontalPadding,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.tileBorderRadius,
+                          ),
                         ),
                         child: const Icon(Icons.delete, color: Colors.white),
                       ),

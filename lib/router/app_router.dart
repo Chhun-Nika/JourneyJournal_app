@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:journey_journal_app/data/repository/expense_repo.dart';
 import 'package:journey_journal_app/model/category.dart';
 import 'package:journey_journal_app/model/checklist_item.dart';
+import 'package:journey_journal_app/model/itinerary_activity.dart';
 import 'package:journey_journal_app/ui/checklist/add_checklist.dart';
 import 'package:journey_journal_app/ui/checklist/checklist_screen.dart';
 import 'package:journey_journal_app/ui/expense/add_expense_screen.dart';
@@ -132,6 +133,20 @@ final GoRouter appRouter = GoRouter(
         return AddItineraryActivityScreen(
           trip: data['trip'],
           dayDate: data['date'],
+        );
+      },
+    ),
+    GoRoute(
+      path: '/itinerary/edit',
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+        final activity = data['activity'] as ItineraryActivity;
+        final dayDate =
+            (data['date'] as DateTime?) ?? activity.date;
+        return AddItineraryActivityScreen(
+          trip: data['trip'],
+          dayDate: dayDate,
+          existingActivity: activity,
         );
       },
     ),

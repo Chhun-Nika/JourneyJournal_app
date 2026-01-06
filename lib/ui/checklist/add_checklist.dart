@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journey_journal_app/data/repository/checklist_item_repo.dart';
+import 'package:journey_journal_app/data/service/notification_service.dart';
 import 'package:journey_journal_app/model/category.dart';
 import 'package:journey_journal_app/model/checklist_item.dart';
+import 'package:journey_journal_app/ui/shared/widgets/app_dropdown_menu.dart';
+import 'package:journey_journal_app/ui/shared/widgets/app_date_field.dart';
+import 'package:journey_journal_app/ui/shared/widgets/app_time_field.dart';
 import 'package:journey_journal_app/ui/shared/widgets/app_text_field.dart';
 import 'package:journey_journal_app/ui/utils/validators.dart';
 
 class AddChecklistItemScreen extends StatefulWidget {
   final String tripId;
   final List<Category> categories;
-  final ChecklistItem? existingItem; 
+  final ChecklistItem? existingItem;
 
   const AddChecklistItemScreen({
     super.key,
@@ -54,28 +58,6 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
     }
   }
 
-  Future<void> _pickReminderDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _reminderDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      setState(() => _reminderDate = picked);
-    }
-  }
-
-  Future<void> _pickReminderTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _reminderTime ?? TimeOfDay.now(),
-    );
-    if (picked != null) {
-      setState(() => _reminderTime = picked);
-    }
-  }
-
   void _saveChecklistItem() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -104,7 +86,11 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
         await checklistRepo.addChecklistItem(item);
       } else {
         await checklistRepo.updateChecklistItem(item);
+        await NotificationService.instance.cancelChecklistNotification(
+          widget.existingItem!,
+        );
       }
+      await NotificationService.instance.scheduleChecklistNotification(item);
 
       if (!mounted) return;
 
@@ -125,34 +111,19 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     final isEditing = widget.existingItem != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Edit Checklist Item' : 'Add Checklist Item')),
+      appBar: AppBar(
+        title: Text(isEditing ? 'Edit Checklist Item' : 'Add Checklist Item'),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
         child: Form(
           key: _formKey,
           child: ListView(
+            clipBehavior: Clip.none,
             children: [
-              DropdownButtonFormField<Category>(
-                value: _selectedCategory,
-                items: widget.categories
-                    .map(
-                      (cat) => DropdownMenuItem(value: cat, child: Text(cat.name)),
-                    )
-                    .toList(),
-                decoration: const InputDecoration(labelText: 'Category'),
-                onChanged: (cat) {
-                  if (cat != null) {
-                    setState(() => _selectedCategory = cat);
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-
               AppTextField(
                 label: "Item name",
                 controller: _nameController,
@@ -160,8 +131,25 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
               ),
               const SizedBox(height: 16),
 
+              AppDropdownMenu<Category>(
+                label: 'Category',
+                value: _selectedCategory,
+                entries: widget.categories
+                    .map(
+                      (cat) => DropdownMenuEntry(value: cat, label: cat.name),
+                    )
+                    .toList(),
+                onSelected: (cat) {
+                  if (cat != null) {
+                    setState(() => _selectedCategory = cat);
+                  }
+                },
+              ),
+              const SizedBox(height: 14),
+
               SwitchListTile(
-                title: const Text("Enable Reminder"),
+                contentPadding: EdgeInsets.fromLTRB(4, 0, 0, 0),
+                title: const Text('Enable reminder'),
                 value: _reminderEnabled,
                 onChanged: (v) {
                   setState(() {
@@ -174,41 +162,23 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
                 },
               ),
 
-              if (_reminderEnabled)
-                InkWell(
-                  onTap: _pickReminderDate,
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Reminder Date',
-                    ),
-                    child: Text(
-                      _reminderDate == null
-                          ? "Select date"
-                          : "${_reminderDate!.month}/${_reminderDate!.day}/${_reminderDate!.year}",
-                      style: theme.textTheme.bodyLarge,
-                    ),
-                  ),
+              if (_reminderEnabled) ...[
+                const SizedBox(height: 8),
+                AppDateField(
+                  hint: 'Reminder Date',
+                  value: _reminderDate,
+                  allowPastDates: false,
+                  onChanged: (date) => setState(() => _reminderDate = date),
                 ),
-
-              if (_reminderEnabled) const SizedBox(height: 16),
-
-              if (_reminderEnabled)
-                InkWell(
-                  onTap: _pickReminderTime,
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Reminder Time',
-                    ),
-                    child: Text(
-                      _reminderTime == null
-                          ? "Select time"
-                          : _reminderTime!.format(context),
-                      style: theme.textTheme.bodyLarge,
-                    ),
-                  ),
+                const SizedBox(height: 16),
+                AppTimeField(
+                  hint: 'Reminder Time',
+                  value: _reminderTime,
+                  onChanged: (time) => setState(() => _reminderTime = time),
                 ),
+              ],
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 30),
 
               ElevatedButton(
                 onPressed: _saveChecklistItem,

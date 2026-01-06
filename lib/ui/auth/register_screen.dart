@@ -69,7 +69,7 @@ class _SignupScreenState extends State<RegisterScreen> {
       resizeToAvoidBottomInset: true,
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
         child: Form(
           key: _formKey,
           child: Column(

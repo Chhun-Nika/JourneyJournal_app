@@ -20,6 +20,7 @@ class _TripListScreenState extends State<TripListScreen> {
   List<Trip> trips = [];
   bool isLoading = true;
   User? currentUser;
+  final TripRepository _tripRepository = TripRepository();
 
   @override
   void initState() {
@@ -47,7 +48,7 @@ class _TripListScreenState extends State<TripListScreen> {
 
   Future<void> _loadTrips() async {
     if (currentUser == null) return;
-    final loadedTrips = await TripRepository().getUserTrips(
+    final loadedTrips = await _tripRepository.getUserTrips(
       currentUser!.userId,
     );
     if (!mounted) return;
@@ -62,6 +63,52 @@ class _TripListScreenState extends State<TripListScreen> {
     final createdTrip = await context.push<Trip>('/trips/create');
     if (createdTrip != null) {
       setState(() => trips.add(createdTrip));
+    }
+  }
+
+  Future<bool> _confirmDeleteTrip(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Delete trip?'),
+            content: const Text('This will remove the trip permanently.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _deleteTrip(Trip trip, int index) async {
+    setState(() {
+      trips.removeAt(index);
+    });
+
+    try {
+      await _tripRepository.deleteTrip(trip.tripId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Trip deleted')));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        trips.insert(index, trip);
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to delete trip')));
     }
   }
 
@@ -121,17 +168,6 @@ class _TripListScreenState extends State<TripListScreen> {
             ],
           ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_none, size: 28),
-              onPressed: () {
-                // You can navigate to a notifications page here
-              },
-            ),
-          ),
-        ],
       ),
       floatingActionButton: CreateButton(
         onPressed: _navigateToCreateTrip,
@@ -143,11 +179,22 @@ class _TripListScreenState extends State<TripListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 8),
-            Text(
-              "Your trips await. Tap to explore.",
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: AppTheme.primaryColor),
+            Text("Tap to explore.", style: TextStyle(color: Colors.grey[600]),),
+            const SizedBox(height: 10,),
+            ShaderMask(
+              blendMode: BlendMode.srcIn,
+              shaderCallback: (bounds) {
+                return AppTheme.primaryGradient.createShader(
+                  Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                );
+              },
+              child: Text(
+                "Your trips await!",
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -164,13 +211,35 @@ class _TripListScreenState extends State<TripListScreen> {
                       itemCount: trips.length,
                       itemBuilder: (context, index) {
                         final trip = trips[index];
-                        return TripTileWidget(
-                          tripName: trip.title,
-                          startDate: trip.startDate,
-                          endDate: trip.endDate,
-                          onTap: () {
-                            context.push('/trips/details', extra: trip);
-                          },
+                        return Dismissible(
+                          key: ValueKey(trip.tripId),
+                          direction: DismissDirection.endToStart,
+                          confirmDismiss: (_) => _confirmDeleteTrip(context),
+                          onDismissed: (_) => _deleteTrip(trip, index),
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.tileHorizontalPadding,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.tileBorderRadius,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
+                          ),
+                          child: TripTileWidget(
+                            tripName: trip.title,
+                            startDate: trip.startDate,
+                            endDate: trip.endDate,
+                            onTap: () {
+                              context.push('/trips/details', extra: trip);
+                            },
+                          ),
                         );
                       },
                     ),

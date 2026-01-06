@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:uuid/uuid.dart';
 
 var uuid = Uuid();
@@ -31,6 +34,11 @@ class User {
       createdAt: createdAt,
       updatedAt: DateTime.now()
     );
+  }
+
+  bool verifyPassword(String input) {
+    final inputHash = sha256.convert(utf8.encode(input)).toString();
+    return password == inputHash;
   }
 
 }

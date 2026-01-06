@@ -55,6 +55,8 @@ class UserRepository {
         name: row['name'] as String,
         email: row['email'] as String,
         password: row['password'] as String,
+        createdAt: DateTime.parse(row['createdAt'] as String),
+        updatedAt: DateTime.parse(row['updatedAt'] as String),
       );
     }
     return null;
@@ -74,6 +76,14 @@ class UserRepository {
       'name': user.name,
       'email': user.email,
       'updatedAt': user.updatedAt.toIso8601String(),
+    });
+  }
+
+  Future<void> updatePassword(String userId, String newPassword) async {
+    final newHash = sha256.convert(utf8.encode(newPassword)).toString();
+    await _userDao.update(userId, {
+      'password': newHash,
+      'updatedAt': DateTime.now().toIso8601String(),
     });
   }
 
