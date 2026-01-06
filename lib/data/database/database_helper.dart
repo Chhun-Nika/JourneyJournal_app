@@ -132,20 +132,20 @@ class DatabaseHelper {
     await db.execute(_createCategoriesTable);
 
     // Seed default categories
-    // final now = DateTime.now();
-    // for (final cat in defaultCategories) {
-    //   await db.insert(
-    //     'categories',
-    //     {
-    //     'categoryId': cat.categoryId,
-    //     'categoryType': cat.categoryType.index,
-    //     'name': cat.name,
-    //     'createdAt': now.toIso8601String(),
-    //     'updatedAt': now.toIso8601String(),
-    //     },
-    //     conflictAlgorithm: ConflictAlgorithm.ignore,
-    //   );
-    // }
+    final now = DateTime.now();
+    for (final cat in defaultCategories) {
+      await db.insert(
+        'categories',
+        {
+        'categoryId': cat.categoryId,
+        'categoryType': cat.categoryType.index,
+        'name': cat.name,
+        'createdAt': now.toIso8601String(),
+        'updatedAt': now.toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
 
     print('Database created and default categories seeded.');
   }

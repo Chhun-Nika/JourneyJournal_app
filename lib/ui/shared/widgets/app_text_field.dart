@@ -5,6 +5,9 @@ class AppTextField extends StatefulWidget {
   final TextEditingController controller;
   final TextInputType keyboardType;
   final bool obscureText;
+  final bool readOnly;
+  final FocusNode? focusNode;
+  final ValueChanged<String>? onChanged;
   final String? Function(String?)? validator;
 
   const AppTextField({
@@ -13,6 +16,9 @@ class AppTextField extends StatefulWidget {
     required this.controller,
     this.keyboardType = TextInputType.text,
     this.obscureText = false,
+    this.readOnly = false,
+    this.focusNode,
+    this.onChanged,
     this.validator,
   });
 
@@ -39,8 +45,11 @@ class _AppTextFieldState extends State<AppTextField> {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: widget.controller,
+      focusNode: widget.focusNode,
       keyboardType: widget.keyboardType,
       obscureText: _obscureText,
+      readOnly: widget.readOnly,
+      onChanged: widget.onChanged,
       validator: widget.validator,
       decoration: InputDecoration(
         labelText: widget.label,

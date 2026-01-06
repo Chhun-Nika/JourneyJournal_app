@@ -8,6 +8,8 @@ class AppDateField extends StatelessWidget {
   final DateTime? value;
   final ValueChanged<DateTime> onChanged; // use onChanged instead of VoidCallback
   final bool allowPastDates; // new
+  final DateTime? firstDate;
+  final DateTime? lastDate;
   final String? Function(String?)? validator;
 
   const AppDateField({
@@ -16,6 +18,8 @@ class AppDateField extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.allowPastDates = true,
+    this.firstDate,
+    this.lastDate,
     this.validator,
   });
 
@@ -26,14 +30,20 @@ class AppDateField extends StatelessWidget {
 
   Future<void> _pickDate(BuildContext context) async {
     final today = DateTime.now();
-    final firstDate = allowPastDates ? DateTime(1900) : today;
-    final initialDate = value ?? today;
+    final minDate = firstDate ?? (allowPastDates ? DateTime(1900) : today);
+    final maxDate = lastDate ?? DateTime(2100);
+    var initialDate = value ?? today;
+    if (initialDate.isBefore(minDate)) {
+      initialDate = minDate;
+    } else if (initialDate.isAfter(maxDate)) {
+      initialDate = maxDate;
+    }
 
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: DateTime(2100),
+      firstDate: minDate,
+      lastDate: maxDate,
     );
 
     if (picked != null) {

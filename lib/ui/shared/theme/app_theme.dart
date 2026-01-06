@@ -6,6 +6,11 @@ class AppTheme {
   static const Color backgroundColor = Colors.white;
   static const Color textColor = Colors.black87;
   static const Color hintColor = Color(0xFF35332C);
+  static const double tileHeight = 80;
+  static const double inputFieldHeight = 56;
+  static const double tileHorizontalPadding = 16;
+  static const double tileVerticalMargin = 6;
+  static const double tileBorderRadius = 12;
 
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,

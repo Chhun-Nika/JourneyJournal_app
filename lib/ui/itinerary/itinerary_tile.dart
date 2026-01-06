@@ -5,11 +5,13 @@ import '../shared/theme/app_theme.dart';
 class AgendaTile extends StatelessWidget {
   final ItineraryActivity activity;
   final ValueChanged<bool?>? onChecked;
+  final VoidCallback? onTap;
 
   const AgendaTile({
     super.key,
     required this.activity,
     this.onChecked,
+    this.onTap,
   });
 
   @override
@@ -21,8 +23,10 @@ class AgendaTile extends StatelessWidget {
     final hasLocation = activity.location?.isNotEmpty == true;
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      height: 80,
+      margin: const EdgeInsets.symmetric(
+        vertical: AppTheme.tileVerticalMargin,
+      ),
+      height: AppTheme.tileHeight,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -60,95 +64,106 @@ class AgendaTile extends StatelessWidget {
 
           /// RIGHT CONTENT
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 22,),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  /// TITLE + LOCATION
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        /// Activity name
-                        Text(
-                          activity.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            decoration: isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-
-                        /// Location row
-                        Row(
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppTheme.tileBorderRadius),
+                onTap: onTap,
+                child: Ink(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.tileHorizontalPadding,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.tileBorderRadius),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      /// TITLE + LOCATION
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.place_outlined,
-                              size: 14,
-                              color: hasLocation
-                                  ? Colors.grey.shade600
-                                  : Colors.grey.shade400,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                hasLocation
-                                    ? activity.location!
-                                    : 'No location set',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: hasLocation
-                                      ? Colors.grey.shade700
-                                      : Colors.grey.shade500,
-                                  fontStyle: hasLocation
-                                      ? FontStyle.normal
-                                      : FontStyle.italic,
-                                ),
+                            /// Activity name
+                            Text(
+                              activity.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                decoration: isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
                               ),
+                            ),
+                            const SizedBox(height: 4),
+
+                            /// Location row
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.place_outlined,
+                                  size: 14,
+                                  color: hasLocation
+                                      ? Colors.grey.shade600
+                                      : Colors.grey.shade400,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    hasLocation
+                                        ? activity.location!
+                                        : 'No location set',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: hasLocation
+                                          ? Colors.grey.shade700
+                                          : Colors.grey.shade500,
+                                      fontStyle: hasLocation
+                                          ? FontStyle.normal
+                                          : FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  /// TIME + STATUS
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        isPastDue
-                            ? 'Overdue · ${activity.time.format(context)}'
-                            : activity.time.format(context),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isPastDue ? Colors.red : null,
-                        ),
                       ),
-                      const SizedBox(height: 6),
-                      if (activity.reminderEnabled)
-                        const Icon(
-                          Icons.notifications_active,
-                          size: 18,
-                          color: AppTheme.primaryColor,
-                        ),
+
+                      const SizedBox(width: 8),
+
+                      /// TIME + STATUS
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            isPastDue
+                                ? 'Overdue · ${activity.time.format(context)}'
+                                : activity.time.format(context),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isPastDue ? Colors.red : null,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          if (activity.reminderEnabled)
+                            const Icon(
+                              Icons.notifications_active,
+                              size: 18,
+                              color: AppTheme.primaryColor,
+                            ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

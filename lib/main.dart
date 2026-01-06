@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:journey_journal_app/data/database/database_helper.dart';
 import 'package:journey_journal_app/data/preferences/user_preferences.dart';
+import 'package:journey_journal_app/data/service/notification_service.dart';
 import 'package:journey_journal_app/ui/shared/theme/app_theme.dart';
 import 'router/app_router.dart' ; 
 
@@ -11,13 +12,27 @@ void main() async {
   } catch (e) {
     debugPrint('Failed to initialize database: $e');
   }
+  await NotificationService.instance.initialize();
   // await DatabaseHelper.reset();
   // await UserPreference.clearUser();
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService.instance.handleInitialNotification();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

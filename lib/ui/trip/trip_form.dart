@@ -88,7 +88,7 @@ class _TripFormState extends State<TripForm> {
       ),
       backgroundColor: AppTheme.backgroundColor,
       body: Padding(
-        padding: const EdgeInsets.only(top: 40, left: 18, right: 18),
+        padding: const EdgeInsets.fromLTRB(18, 26, 18, 24),
         child: Form(
           key: _formkey,
           child: Column(

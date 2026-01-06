@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journey_journal_app/data/repository/itinerary_activity_repo.dart';
+import 'package:journey_journal_app/data/service/notification_service.dart';
+import 'package:journey_journal_app/ui/shared/widgets/app_dropdown_menu.dart';
+import 'package:journey_journal_app/ui/shared/widgets/app_time_field.dart';
 import '../../model/itinerary_activity.dart';
 import '../../model/trip.dart';
 import '../shared/theme/app_theme.dart';
@@ -8,11 +11,13 @@ import '../shared/theme/app_theme.dart';
 class AddItineraryActivityScreen extends StatefulWidget {
   final Trip trip;
   final DateTime dayDate;
+  final ItineraryActivity? existingActivity;
 
   const AddItineraryActivityScreen({
     super.key,
     required this.trip,
     required this.dayDate,
+    this.existingActivity,
   });
 
   @override
@@ -33,21 +38,29 @@ class _AddItineraryActivityScreenState
   bool _reminderEnabled = false;
   int _reminderMinutes = 15;
 
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-    );
-    if (picked != null) {
-      setState(() => _selectedTime = picked);
+  @override
+  void initState() {
+    super.initState();
+
+    final existing = widget.existingActivity;
+    if (existing != null) {
+      _nameController.text = existing.name;
+      _locationController.text = existing.location ?? '';
+      _descController.text = existing.description ?? '';
+      _selectedTime = existing.time;
+      _reminderEnabled = existing.reminderEnabled;
+      _reminderMinutes = existing.reminderMinutesBefore;
     }
   }
 
   void _saveActivity() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final now = DateTime.now();
+    final existing = widget.existingActivity;
     final activity = ItineraryActivity(
-      tripId: widget.trip.tripId,
+      activityId: existing?.activityId,
+      tripId: existing?.tripId ?? widget.trip.tripId,
       name: _nameController.text.trim(),
       location: _locationController.text.trim().isEmpty
           ? null
@@ -55,17 +68,28 @@ class _AddItineraryActivityScreenState
       description: _descController.text.trim().isEmpty
           ? null
           : _descController.text.trim(),
-      date: widget.dayDate,
+      date: existing?.date ?? widget.dayDate,
       time: _selectedTime,
+      isCompleted: existing?.isCompleted ?? false,
       reminderEnabled: _reminderEnabled,
       reminderMinutesBefore: _reminderMinutes,
+      createdAt: existing?.createdAt,
+      updatedAt: now,
     );
 
-    // context.pop(activity);
     try {
-      await _itineraryRepo.addActivity(activity);
+      if (existing == null) {
+        await _itineraryRepo.addActivity(activity);
+      } else {
+        await _itineraryRepo.updateActivity(activity);
+        await NotificationService.instance
+            .cancelItineraryNotifications(existing);
+      }
+      await NotificationService.instance.scheduleItineraryNotifications(
+        activity,
+      );
       if (!mounted) return;
-      context.pop(activity); // Return the new expense to the list screen
+      context.pop(activity);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -84,17 +108,20 @@ class _AddItineraryActivityScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.existingActivity != null;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Add Activity'),
+        title: Text(isEditing ? 'Edit Activity' : 'Add Activity'),
         backgroundColor: AppTheme.primaryColor,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(18, 26, 18, 24),
         child: Form(
           key: _formKey,
           child: ListView(
+            clipBehavior: Clip.none,
             children: [
               // Activity name (required)
               TextFormField(
@@ -103,7 +130,7 @@ class _AddItineraryActivityScreenState
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Location (optional)
               TextFormField(
@@ -112,31 +139,31 @@ class _AddItineraryActivityScreenState
                   labelText: 'Location (optional)',
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Description (optional)
               TextFormField(
                 controller: _descController,
                 decoration: const InputDecoration(
                   labelText: 'Description (optional)',
+                  alignLabelWithHint: true,
                 ),
+                textAlignVertical: TextAlignVertical.top,
                 maxLines: 3,
-              ),
-              const SizedBox(height: 20),
-
-              // Time picker
-              InkWell(
-                onTap: _pickTime,
-                child: InputDecorator(
-                  decoration: const InputDecoration(labelText: 'Time'),
-                  child: Text(_selectedTime.format(context)),
-                ),
               ),
               const SizedBox(height: 16),
 
+              // Time picker
+              AppTimeField(
+                hint: 'Time',
+                value: _selectedTime,
+                onChanged: (time) => setState(() => _selectedTime = time),
+              ),
+              const SizedBox(height: 12),
+
               // Reminder toggle
               SwitchListTile(
-                contentPadding: EdgeInsets.zero,
+                contentPadding: EdgeInsets.fromLTRB(4, 0, 0, 0),
                 title: const Text('Enable reminder'),
                 value: _reminderEnabled,
                 onChanged: (v) => setState(() => _reminderEnabled = v),
@@ -144,29 +171,28 @@ class _AddItineraryActivityScreenState
 
               if (_reminderEnabled) ...[
                 const SizedBox(height: 8),
-                DropdownButtonFormField<int>(
+                AppDropdownMenu<int>(
+                  label: 'Remind me before',
                   value: _reminderMinutes,
-                  decoration: const InputDecoration(
-                    labelText: 'Remind me before',
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 5, child: Text('5 minutes')),
-                    DropdownMenuItem(value: 10, child: Text('10 minutes')),
-                    DropdownMenuItem(value: 15, child: Text('15 minutes')),
-                    DropdownMenuItem(value: 30, child: Text('30 minutes')),
-                    DropdownMenuItem(value: 60, child: Text('1 hour')),
+                  entries: [
+                    DropdownMenuEntry(value: 5, label: '5 minutes'),
+                    DropdownMenuEntry(value: 10, label: '10 minutes'),
+                    DropdownMenuEntry(value: 15, label: '15 minutes'),
+                    DropdownMenuEntry(value: 30, label: '30 minutes'),
+                    DropdownMenuEntry(value: 60, label: '1 hour'),
                   ],
-                  onChanged: (v) => setState(() => _reminderMinutes = v ?? 15),
+                  onSelected: (v) =>
+                      setState(() => _reminderMinutes = v ?? 15),
                 ),
               ],
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 30),
 
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _saveActivity,
-                  child: const Text('Save Activity'),
+                  child: Text(isEditing ? 'Save Changes' : 'Save Activity'),
                 ),
               ),
             ],

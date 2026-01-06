@@ -59,6 +59,18 @@ class Trip {
   int get totalDays => endDate.difference(startDate).inDays + 1;
   double get totalExpense => expenses.fold(0.0, (sum, e) => sum + e.amount);
 
+  Map<String, double> get expenseTotalsByCategory {
+    final totals = <String, double>{};
+    for (final expense in expenses) {
+      totals.update(
+        expense.categoryId,
+        (value) => value + expense.amount,
+        ifAbsent: () => expense.amount,
+      );
+    }
+    return totals;
+  }
+
   int get completedChecklistCount =>
       checklistItems.where((i) => i.completed).length;
 

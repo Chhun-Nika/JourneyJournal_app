@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/service/notification_service.dart';
 import '../../data/repository/itinerary_activity_repo.dart';
 import '../../data/repository/trip.repo.dart';
 import '../../model/itinerary_activity.dart';
@@ -74,12 +77,13 @@ class AgendaRouteLoader extends StatelessWidget {
   }
 }
 
-
 class _AgendaScreenState extends State<AgendaScreen> {
   final _repository = ItineraryActivityRepository();
 
   List<ItineraryActivity> agendas = [];
   bool _loading = true;
+  Timer? _nextRefreshTimer;
+  ItineraryActivity? _lastDeletedActivity;
 
   @override
   void initState() {
@@ -102,10 +106,12 @@ class _AgendaScreenState extends State<AgendaScreen> {
       (a, b) => a.combineDateTime.compareTo(b.combineDateTime),
     );
 
+    if (!mounted) return;
     setState(() {
       agendas = filtered;
       _loading = false;
     });
+    _scheduleNextRefresh();
   }
 
   Future<void> _toggleCompleted(
@@ -117,6 +123,128 @@ class _AgendaScreenState extends State<AgendaScreen> {
 
     await _repository.updateActivity(updated);
     await _loadAgendas();
+  }
+
+  Future<bool> _confirmDelete(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Delete activity?'),
+            content: const Text('You can undo this action.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  void _deleteActivity(ItineraryActivity activity) async {
+    _lastDeletedActivity = activity;
+
+    await _repository.deleteActivity(activity.activityId);
+    await NotificationService.instance.cancelItineraryNotifications(activity);
+
+    if (!mounted) return;
+    setState(() {
+      agendas.removeWhere((a) => a.activityId == activity.activityId);
+    });
+    _scheduleNextRefresh();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Itinerary activity deleted'),
+        action: SnackBarAction(label: 'Undo', onPressed: _undoDelete),
+      ),
+    );
+  }
+
+  void _undoDelete() async {
+    final activity = _lastDeletedActivity;
+    if (activity == null) return;
+
+    await _repository.addActivity(activity);
+    await NotificationService.instance.scheduleItineraryNotifications(activity);
+
+    if (!mounted) return;
+    setState(() {
+      agendas.add(activity);
+      agendas.sort(
+        (a, b) => a.combineDateTime.compareTo(b.combineDateTime),
+      );
+    });
+    _scheduleNextRefresh();
+
+    _lastDeletedActivity = null;
+  }
+
+  Future<void> _openActivityForm({ItineraryActivity? activity}) async {
+    final route = activity == null ? '/itinerary/add' : '/itinerary/edit';
+    final result = await context.push<ItineraryActivity>(
+      route,
+      extra: {
+        'trip': widget.trip,
+        'date': widget.dayDate,
+        if (activity != null) 'activity': activity,
+      },
+    );
+
+    if (result != null) {
+      await _loadAgendas();
+    }
+  }
+
+  void _scheduleNextRefresh() {
+    _nextRefreshTimer?.cancel();
+
+    final now = DateTime.now();
+    DateTime? nextUpdate;
+
+    for (final activity in agendas) {
+      final eventTime = activity.combineDateTime;
+      if (eventTime.isAfter(now)) {
+        nextUpdate = _earliest(nextUpdate, eventTime);
+      }
+
+      if (activity.reminderEnabled) {
+        final reminderTime = activity.reminderNotificationDateTime;
+        if (reminderTime.isAfter(now)) {
+          nextUpdate = _earliest(nextUpdate, reminderTime);
+        }
+      }
+    }
+
+    if (nextUpdate == null) return;
+
+    final delay = nextUpdate.difference(now);
+    _nextRefreshTimer = Timer(delay, () {
+      if (!mounted) return;
+      setState(() {});
+      _scheduleNextRefresh();
+    });
+  }
+
+  DateTime _earliest(DateTime? current, DateTime candidate) {
+    if (current == null || candidate.isBefore(current)) {
+      return candidate;
+    }
+    return current;
+  }
+
+  @override
+  void dispose() {
+    _nextRefreshTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -167,10 +295,36 @@ class _AgendaScreenState extends State<AgendaScreen> {
                           itemCount: agendas.length,
                           itemBuilder: (context, index) {
                             final activity = agendas[index];
-                            return AgendaTile(
-                              activity: activity,
-                              onChecked: (v) =>
-                                  _toggleCompleted(activity, v),
+                            return Dismissible(
+                              key: ValueKey(
+                                '${activity.activityId}_${activity.createdAt}',
+                              ),
+                              direction: DismissDirection.endToStart,
+                              confirmDismiss: (_) => _confirmDelete(context),
+                              onDismissed: (_) => _deleteActivity(activity),
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppTheme.tileHorizontalPadding,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(
+                                    AppTheme.tileBorderRadius,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.delete,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              child: AgendaTile(
+                                activity: activity,
+                                onChecked: (v) =>
+                                    _toggleCompleted(activity, v),
+                                onTap: () =>
+                                    _openActivityForm(activity: activity),
+                              ),
                             );
                           },
                         ),
@@ -181,21 +335,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
 
       floatingActionButton: CreateButton(
         tooltip: 'Add Activity',
-        onPressed: () async {
-          final activity =
-              await context.push<ItineraryActivity>(
-            '/itinerary/add',
-            extra: {
-              'trip': widget.trip,
-              'date': widget.dayDate,
-            },
-          );
-
-          if (activity != null) {
-            await _repository.addActivity(activity);
-            await _loadAgendas();
-          }
-        },
+        onPressed: () => _openActivityForm(),
       ),
     );
   }
