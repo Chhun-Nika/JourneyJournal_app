@@ -9,11 +9,13 @@ import 'package:journey_journal_app/ui/utils/validators.dart';
 class AddChecklistItemScreen extends StatefulWidget {
   final String tripId;
   final List<Category> categories;
+  final ChecklistItem? existingItem; 
 
   const AddChecklistItemScreen({
     super.key,
     required this.tripId,
     required this.categories,
+    this.existingItem,
   });
 
   @override
@@ -34,13 +36,28 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
   @override
   void initState() {
     super.initState();
+
     _selectedCategory = widget.categories.first;
+
+    if (widget.existingItem != null) {
+      final item = widget.existingItem!;
+      _selectedCategory = widget.categories.firstWhere(
+        (cat) => cat.categoryId == item.categoryId,
+        orElse: () => widget.categories.first,
+      );
+      _nameController.text = item.name;
+      _reminderEnabled = item.reminderEnabled;
+      if (item.reminderTime != null) {
+        _reminderDate = item.reminderTime;
+        _reminderTime = TimeOfDay.fromDateTime(item.reminderTime!);
+      }
+    }
   }
 
   Future<void> _pickReminderDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _reminderDate ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
@@ -52,7 +69,7 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
   Future<void> _pickReminderTime() async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: _reminderTime ?? TimeOfDay.now(),
     );
     if (picked != null) {
       setState(() => _reminderTime = picked);
@@ -74,6 +91,7 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
     }
 
     final item = ChecklistItem(
+      checklistItemId: widget.existingItem?.checklistItemId,
       tripId: widget.tripId,
       categoryId: _selectedCategory.categoryId,
       name: _nameController.text.trim(),
@@ -82,10 +100,15 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
     );
 
     try {
-      await checklistRepo.addChecklistItem(item);
+      if (widget.existingItem == null) {
+        await checklistRepo.addChecklistItem(item);
+      } else {
+        await checklistRepo.updateChecklistItem(item);
+      }
+
       if (!mounted) return;
 
-      context.pop(item); // Return the new expense to the list screen
+      context.pop(item); 
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -104,8 +127,10 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final isEditing = widget.existingItem != null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Checklist Item')),
+      appBar: AppBar(title: Text(isEditing ? 'Edit Checklist Item' : 'Add Checklist Item')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -113,11 +138,10 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
           child: ListView(
             children: [
               DropdownButtonFormField<Category>(
-                initialValue: _selectedCategory,
+                value: _selectedCategory,
                 items: widget.categories
                     .map(
-                      (cat) =>
-                          DropdownMenuItem(value: cat, child: Text(cat.name)),
+                      (cat) => DropdownMenuItem(value: cat, child: Text(cat.name)),
                     )
                     .toList(),
                 decoration: const InputDecoration(labelText: 'Category'),
@@ -188,7 +212,7 @@ class _AddChecklistItemScreenState extends State<AddChecklistItemScreen> {
 
               ElevatedButton(
                 onPressed: _saveChecklistItem,
-                child: const Text('Save Item'),
+                child: Text(isEditing ? 'Save Changes' : 'Save Item'),
               ),
             ],
           ),

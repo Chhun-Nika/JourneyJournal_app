@@ -93,6 +93,7 @@ class _ChecklistListScreenState extends State<ChecklistListScreen> {
     }
   }
 
+
   Future<bool> _confirmDelete(BuildContext context) async {
     return await showDialog<bool>(
           context: context,

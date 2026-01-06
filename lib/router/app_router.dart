@@ -5,7 +5,6 @@ import 'package:journey_journal_app/model/category.dart';
 import 'package:journey_journal_app/model/checklist_item.dart';
 import 'package:journey_journal_app/ui/checklist/add_checklist.dart';
 import 'package:journey_journal_app/ui/checklist/checklist_screen.dart';
-import 'package:journey_journal_app/ui/checklist/edit_checklist.dart';
 import 'package:journey_journal_app/ui/expense/add_expense_screen.dart';
 import 'package:journey_journal_app/ui/expense/expense_list_screen.dart';
 import 'package:journey_journal_app/ui/trip/trip_tab_screen.dart';
@@ -130,15 +129,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/checklist/edit',
       builder: (context, state) {
-        final tripId = state.extra is Map<String, dynamic> ? (state.extra as Map<String, dynamic>)['tripId'] as String : '';
-        final categories = state.extra is Map<String, dynamic> ? (state.extra as Map<String, dynamic>)['categories'] as List<Category> : <Category>[];
-        final existingItem = state.extra is Map<String, dynamic> ? (state.extra as Map<String, dynamic>)['existingItem'] as ChecklistItem? : null;
-
-        if (tripId == null || categories.isEmpty) {
-          return const Scaffold(body: Center(child: Text('Missing parameters')));
-        }
-
-        return EditChecklistItemScreen(
+        final extra = state.extra as Map;
+        final tripId = extra['tripId'] as String;
+        final categories = extra['categories'] as List<Category>;
+        final existingItem = extra['existingItem'] as ChecklistItem;
+        return AddChecklistItemScreen(
           tripId: tripId,
           categories: categories,
           existingItem: existingItem,
