@@ -29,7 +29,7 @@ class AgendaScreen extends StatefulWidget {
   State<AgendaScreen> createState() => _AgendaScreenState();
 }
 
-class AgendaRouteLoader extends StatelessWidget {
+class AgendaRouteLoader extends StatefulWidget {
   final String tripId;
   final DateTime dayDate;
 
@@ -40,39 +40,52 @@ class AgendaRouteLoader extends StatelessWidget {
   });
 
   @override
+  State<AgendaRouteLoader> createState() => _AgendaRouteLoaderState();
+}
+
+class _AgendaRouteLoaderState extends State<AgendaRouteLoader> {
+  final TripRepository _tripRepository = TripRepository();
+  Trip? _trip;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTrip();
+  }
+
+  Future<void> _loadTrip() async {
+    final trip = await _tripRepository.getTrip(widget.tripId);
+    if (!mounted) return;
+    setState(() {
+      _trip = trip;
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final tripRepository = TripRepository();
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-    return FutureBuilder<Trip?>(
-      future: tripRepository.getTrip(tripId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    final trip = _trip;
+    if (trip == null) {
+      return const Scaffold(body: Center(child: Text('Trip not found')));
+    }
 
-        final trip = snapshot.data;
-        if (trip == null) {
-          return const Scaffold(
-            body: Center(child: Text('Trip not found')),
-          );
-        }
+    final tripStart = DateTime(
+      trip.startDate.year,
+      trip.startDate.month,
+      trip.startDate.day,
+    );
+    final dayIndex = widget.dayDate.difference(tripStart).inDays;
+    final safeIndex = dayIndex < 0 ? 0 : dayIndex;
 
-        final tripStart = DateTime(
-          trip.startDate.year,
-          trip.startDate.month,
-          trip.startDate.day,
-        );
-        final dayIndex = dayDate.difference(tripStart).inDays;
-        final safeIndex = dayIndex < 0 ? 0 : dayIndex;
-
-        return AgendaScreen(
-          trip: trip,
-          dayIndex: safeIndex,
-          dayDate: dayDate,
-        );
-      },
+    return AgendaScreen(
+      trip: trip,
+      dayIndex: safeIndex,
+      dayDate: widget.dayDate,
     );
   }
 }
@@ -94,32 +107,32 @@ class _AgendaScreenState extends State<AgendaScreen> {
   Future<void> _loadAgendas() async {
     setState(() => _loading = true);
 
-    final all =
-        await _repository.getTripActivities(widget.trip.tripId);
+    final all = await _repository.getTripActivities(widget.trip.tripId);
 
-    final filtered = all.where((a) =>
-        a.date.year == widget.dayDate.year &&
-        a.date.month == widget.dayDate.month &&
-        a.date.day == widget.dayDate.day).toList();
+    final filtered = all
+        .where(
+          (a) =>
+              a.date.year == widget.dayDate.year &&
+              a.date.month == widget.dayDate.month &&
+              a.date.day == widget.dayDate.day,
+        )
+        .toList();
 
-    filtered.sort(
-      (a, b) => a.combineDateTime.compareTo(b.combineDateTime),
-    );
+    filtered.sort((a, b) => a.combineDateTime.compareTo(b.combineDateTime));
 
     if (!mounted) return;
     setState(() {
       agendas = filtered;
+      widget.trip.itineraryActivities
+        ..clear()
+        ..addAll(filtered);
       _loading = false;
     });
     _scheduleNextRefresh();
   }
 
-  Future<void> _toggleCompleted(
-    ItineraryActivity activity,
-    bool? value,
-  ) async {
-    final updated =
-        activity.copyWith(isCompleted: value ?? false);
+  Future<void> _toggleCompleted(ItineraryActivity activity, bool? value) async {
+    final updated = activity.copyWith(isCompleted: value ?? false);
 
     await _repository.updateActivity(updated);
     await _loadAgendas();
@@ -158,6 +171,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
     if (!mounted) return;
     setState(() {
       agendas.removeWhere((a) => a.activityId == activity.activityId);
+      widget.trip.itineraryActivities.removeWhere(
+        (a) => a.activityId == activity.activityId,
+      );
     });
     _scheduleNextRefresh();
 
@@ -179,7 +195,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
     if (!mounted) return;
     setState(() {
       agendas.add(activity);
-      agendas.sort(
+      agendas.sort((a, b) => a.combineDateTime.compareTo(b.combineDateTime));
+      widget.trip.itineraryActivities.add(activity);
+      widget.trip.itineraryActivities.sort(
         (a, b) => a.combineDateTime.compareTo(b.combineDateTime),
       );
     });
@@ -216,7 +234,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
         nextUpdate = _earliest(nextUpdate, eventTime);
       }
 
-      if (activity.reminderEnabled) {
+      if (activity.reminderEnabled && activity.reminderMinutesBefore > 0) {
         final reminderTime = activity.reminderNotificationDateTime;
         if (reminderTime.isAfter(now)) {
           nextUpdate = _earliest(nextUpdate, reminderTime);
@@ -249,8 +267,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate =
-        DateFormat('EEEE, d MMM yyyy').format(widget.dayDate);
+    final formattedDate = DateFormat('EEEE, d MMM yyyy').format(widget.dayDate);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -258,9 +275,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
         title: Text(
           'Itinerary - ${widget.trip.title}',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: AppTheme.primaryColor,
       ),
@@ -273,9 +290,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
             Text(
               'Day ${widget.dayIndex + 1} • $formattedDate',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -283,51 +300,47 @@ class _AgendaScreenState extends State<AgendaScreen> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : agendas.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No activities yet.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium,
+                  ? Center(
+                      child: Text(
+                        'No activities yet.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: agendas.length,
+                      itemBuilder: (context, index) {
+                        final activity = agendas[index];
+                        return Dismissible(
+                          key: ValueKey(
+                            '${activity.activityId}_${activity.createdAt}',
                           ),
-                        )
-                      : ListView.builder(
-                          itemCount: agendas.length,
-                          itemBuilder: (context, index) {
-                            final activity = agendas[index];
-                            return Dismissible(
-                              key: ValueKey(
-                                '${activity.activityId}_${activity.createdAt}',
+                          direction: DismissDirection.endToStart,
+                          confirmDismiss: (_) => _confirmDelete(context),
+                          onDismissed: (_) => _deleteActivity(activity),
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.tileHorizontalPadding,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.tileBorderRadius,
                               ),
-                              direction: DismissDirection.endToStart,
-                              confirmDismiss: (_) => _confirmDelete(context),
-                              onDismissed: (_) => _deleteActivity(activity),
-                              background: Container(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppTheme.tileHorizontalPadding,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(
-                                    AppTheme.tileBorderRadius,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.delete,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              child: AgendaTile(
-                                activity: activity,
-                                onChecked: (v) =>
-                                    _toggleCompleted(activity, v),
-                                onTap: () =>
-                                    _openActivityForm(activity: activity),
-                              ),
-                            );
-                          },
-                        ),
+                            ),
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
+                          ),
+                          child: AgendaTile(
+                            activity: activity,
+                            onChecked: (v) => _toggleCompleted(activity, v),
+                            onTap: () => _openActivityForm(activity: activity),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

@@ -47,12 +47,6 @@ class UserDao {
     return null;
   }
 
-  // Get all users
-  // Future<List<Map<String, Object?>>> getAll() async {
-  //   final db = await dbHelper.database;
-  //   return await db.query(tableName);
-  // }
-
   // Update user
   Future<void> update(String userId, Map<String, Object?> row) async {
     final db = await dbHelper.database;

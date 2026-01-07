@@ -1,19 +1,11 @@
 class AppDateValidator {
-  AppDateValidator._(); // private constructor to prevent instantiation
+  AppDateValidator._(); 
 
-  /// Validate that a date is selected (not null)
-  /// [value] : the date to validate
-  /// [fieldName] : text to show in error message
   static String? validateRequired(DateTime? value, String fieldName) {
     if (value == null) return 'Please select $fieldName';
     return null;
   }
 
-  /// Validate that end date is after start date
-  /// [start] : start date
-  /// [end] : end date
-  /// [startFieldName] : custom name for start date field
-  /// [endFieldName] : custom name for end date field
   static String? validateEndAfterStart({
     required DateTime? start,
     required DateTime? end,
@@ -26,9 +18,6 @@ class AppDateValidator {
     if (end.isAtSameMomentAs(start)) return '$endFieldName cannot be the same as $startFieldName';
     return null;
   }
-
-  /// Combined validator for end date:
-  /// checks for null, then comparison
   static String? validateEndDate({
     required DateTime? start,
     required DateTime? end,

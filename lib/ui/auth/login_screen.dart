@@ -28,7 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // void login
   void onLogin() async {
   if (_formKey.currentState!.validate()) {
     final email = _emailController.text.trim();
@@ -48,7 +47,6 @@ class _LoginScreenState extends State<LoginScreen> {
         const SnackBar(content: Text('Login successful')),
       );
     } else {
-      // Invalid email/password
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid email or password')),
       );
@@ -79,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight
-                          .bold, // this color is required but ignored by shader
+                          .bold, 
                     ),
                   ),
                 ),
@@ -114,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        context.push('/register'); // GoRouter navigation
+                        context.push('/register'); 
                       },
                       child: Text(
                         "Sign up",

@@ -91,7 +91,10 @@ class NotificationService {
     final scheduleMode = await _resolveAndroidScheduleMode();
     final now = DateTime.now();
     final eventTime = activity.combineDateTime;
-    final reminderTime = activity.reminderNotificationDateTime;
+    final hasReminder =
+        activity.reminderEnabled && activity.reminderMinutesBefore > 0;
+    final reminderTime =
+        hasReminder ? activity.reminderNotificationDateTime : null;
     final details = _notificationDetails();
     final payload = _buildPayload(activity);
 
@@ -107,7 +110,7 @@ class NotificationService {
       );
     }
 
-    if (activity.reminderEnabled && reminderTime.isAfter(now)) {
+    if (hasReminder && reminderTime!.isAfter(now)) {
       await _plugin.zonedSchedule(
         _reminderNotificationId(activity.activityId),
         'Reminder',

@@ -2,7 +2,7 @@ import 'package:uuid/uuid.dart';
 
 var uuid = Uuid();
 
-enum CategoryType { checklist, expense, itineraryActivity }
+enum CategoryType { checklist, expense }
 
 class Category {
   final String categoryId;

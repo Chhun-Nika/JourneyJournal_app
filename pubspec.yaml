@@ -50,10 +50,22 @@ dependencies:
   permission_handler: ^12.0.1
   fl_chart: ^1.1.1
   pie_chart: ^5.1.0
+  flutter_native_splash: ^2.4.7
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/image/logo.png
+  android: true
+  ios: false
+  web: false
+  android_12:
+    color: "#FFFFFF"
+    image: assets/image/logo.png
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -67,6 +79,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/image/logo.png
   fonts:
     - family: DMSans
       fonts:
@@ -107,3 +121,8 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/image/logo.png

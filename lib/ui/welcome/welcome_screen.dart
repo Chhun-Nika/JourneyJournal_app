@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journey_journal_app/ui/shared/theme/app_theme.dart';
 
 import '../../data/preferences/user_preferences.dart';
 
@@ -20,15 +21,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Future<void> _initializeApp() async {
-    // Optional: reset DB for testing
-    // await DatabaseHelper.reset();
-    // Check if user is logged in
     final user = await UserPreference.getUser();
 
     if (user != null) {
-      context.go('/trips'); // Go directly to trips home
-    } 
-    // else stay on welcome screen so user can login or register
+      context.go('/trips');
+    }
   }
 
   @override
@@ -45,20 +42,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
           Align(
             alignment: Alignment.center,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 20),
-                const Text(
-                  'Journey Journal',
-                  style: TextStyle(
-                    fontFamily: 'DMSans',
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+            child: Image.asset('assets/image/logo.png'),
           ),
           Align(
             alignment: Alignment.bottomCenter,
@@ -66,21 +50,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               decoration: const BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(30),
-                ),
+                color: AppTheme.primaryColor,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  const Text(
+                    "Let's get started!",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 24,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () => context.push('/login'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: Colors.blue,
+                        foregroundColor: AppTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -88,7 +80,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                       child: const Text(
                         'Login',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -107,7 +102,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                       child: const Text(
                         'Sign Up',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

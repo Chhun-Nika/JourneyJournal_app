@@ -11,7 +11,7 @@ import 'package:journey_journal_app/ui/utils/validators.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final String tripId;
-  final List<Category> categories; // <-- pass categories from list screen
+  final List<Category> categories; 
 
   const AddExpenseScreen({
     super.key,
@@ -37,7 +37,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
-    // Set initial category from the passed list
+    // Set initial category 
     _selectedCategory = widget.categories.first;
   }
 
@@ -63,7 +63,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       await _expenseRepository.addExpense(newExpense);
       if (!mounted) return;
 
-      context.pop(newExpense); // Return the new expense to the list screen
+      context.pop(newExpense); 
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -91,7 +91,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           child: ListView(
             clipBehavior: Clip.none,
             children: [
-              // Category dropdown (uses passed categories)
+              // Category dropdown 
               AppDropdownMenu<Category>(
                 label: 'Category',
                 value: _selectedCategory,

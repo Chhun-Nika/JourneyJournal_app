@@ -175,6 +175,7 @@ class _AddItineraryActivityScreenState
                   label: 'Remind me before',
                   value: _reminderMinutes,
                   entries: [
+                    DropdownMenuEntry(value: 0, label: 'None'),
                     DropdownMenuEntry(value: 5, label: '5 minutes'),
                     DropdownMenuEntry(value: 10, label: '10 minutes'),
                     DropdownMenuEntry(value: 15, label: '15 minutes'),

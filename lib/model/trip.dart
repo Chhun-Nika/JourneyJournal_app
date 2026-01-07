@@ -2,6 +2,7 @@ import 'package:journey_journal_app/model/checklist_item.dart';
 import 'package:uuid/uuid.dart';
 
 import 'expense.dart';
+import 'itinerary_activity.dart';
 
 var uuid = Uuid();
 
@@ -16,6 +17,7 @@ class Trip {
   final DateTime updatedAt;
   final List<Expense> expenses;
   final List<ChecklistItem> checklistItems;
+  final List<ItineraryActivity> itineraryActivities;
   
 
   Trip({
@@ -29,17 +31,22 @@ class Trip {
     DateTime? updatedAt,
     List<Expense>? expenses,
     List<ChecklistItem>? checklistItems,
+    List<ItineraryActivity>? itineraryActivities,
   }) : tripId = tripId ?? uuid.v4(),
        createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now(),
        expenses = expenses ?? [],
-       checklistItems = checklistItems ?? [];
+       checklistItems = checklistItems ?? [],
+       itineraryActivities = itineraryActivities ?? [];
 
   Trip copyWith({
     String? title,
     String? destination,
     DateTime? startDate,
     DateTime? endDate,
+    List<Expense>? expenses,
+    List<ChecklistItem>? checklistItems,
+    List<ItineraryActivity>? itineraryActivities,
   }) {
     return Trip(
       tripId: tripId,
@@ -50,8 +57,9 @@ class Trip {
       endDate: endDate ?? this.endDate,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
-      expenses: expenses,
-      checklistItems: checklistItems,
+      expenses: expenses ?? this.expenses,
+      checklistItems: checklistItems ?? this.checklistItems,
+      itineraryActivities: itineraryActivities ?? this.itineraryActivities,
 
     );
   }

@@ -4,7 +4,6 @@ import 'package:journey_journal_app/ui/shared/widgets/app_button.dart';
 import 'package:journey_journal_app/ui/shared/widgets/app_text_field.dart';
 import 'package:journey_journal_app/ui/utils/validators.dart';
 import 'package:journey_journal_app/ui/shared/theme/app_theme.dart';
-
 import '../../data/repository/user_repo.dart';
 import '../../model/user.dart';
 
@@ -64,7 +63,6 @@ class _SignupScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -86,7 +84,7 @@ class _SignupScreenState extends State<RegisterScreen> {
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight
-                        .bold, // this color is required but ignored by shader
+                        .bold, 
                   ),
                 ),
               ),
@@ -134,7 +132,7 @@ class _SignupScreenState extends State<RegisterScreen> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      context.push('/login'); // GoRouter navigation
+                      context.push('/login');
                     },
                     child: Text(
                       "Log in",

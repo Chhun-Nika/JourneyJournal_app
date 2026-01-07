@@ -39,12 +39,9 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   /// Load both expenses and categories
   Future<void> _loadData() async {
     try {
-      // 1. Load categories of type expense
       expenseCategories = await categoryRepository.getCategoriesByType(
         CategoryType.expense,
       );
-
-      // 2. Load grouped expenses
       final grouped = await expenseRepository.getGroupedExpenses(
         widget.trip.tripId,
       );
@@ -72,7 +69,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       '/expenses/add',
       extra: {
         'tripId': widget.trip.tripId,
-        'categories': expenseCategories, // pass categories to AddExpenseScreen
+        'categories': expenseCategories, 
       },
     );
 

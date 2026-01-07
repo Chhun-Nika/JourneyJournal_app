@@ -6,6 +6,8 @@ class AppTheme {
   static const Color backgroundColor = Colors.white;
   static const Color textColor = Colors.black87;
   static const Color hintColor = Color(0xFF35332C);
+  static const Color switchOffColor = Color(0xFFB0B0B0);
+  static const Color switchOffTrackColor = Color(0xFFF2F2F2);
   static const double tileHeight = 80;
   static const double inputFieldHeight = 56;
   static const double tileHorizontalPadding = 16;
@@ -110,5 +112,6 @@ class AppTheme {
         ), // <-- looks weird sometimes
       ),
     ),
+    
   );
 }

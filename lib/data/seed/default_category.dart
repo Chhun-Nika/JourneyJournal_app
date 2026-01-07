@@ -51,15 +51,10 @@ final defaultCategories = <Category>[
   ),
   Category(
     categoryType: CategoryType.expense,
-    name: 'Attractions',
-  ),
-  Category(
-    categoryType: CategoryType.expense,
     name: 'Emergency',
   ),
    Category(
     categoryType: CategoryType.expense,
     name: 'other',
   ),
-
 ];
